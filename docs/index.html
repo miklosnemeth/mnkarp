@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mnKarp – free chord + arpeggiator rack plugin (VST3) for Windows</title>
+<meta name="description" content="mnKarp is a free MIDI rack plugin (VST3) for Windows: mnKord turns one key into a chord, mnArpee plays it as a pattern, each with an on/off switch. Rack presets, automation, drag the result into your DAW.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="author" content="Miklós Németh">
+<link rel="canonical" href="https://miklosnemeth.github.io/mnkarp/">
+<link rel="alternate" hreflang="en" href="https://miklosnemeth.github.io/mnkarp/">
+<link rel="alternate" hreflang="hu" href="https://miklosnemeth.github.io/mnkarp/hu/">
+<link rel="alternate" hreflang="x-default" href="https://miklosnemeth.github.io/mnkarp/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="mnKarp">
+<meta property="og:title" content="mnKarp – free chord + arpeggiator rack plugin (VST3) for Windows">
+<meta property="og:description" content="mnKarp is a free MIDI rack plugin (VST3) for Windows: mnKord turns one key into a chord, mnArpee plays it as a pattern, each with an on/off switch. Rack presets, automation, drag the result into your DAW.">
+<meta property="og:url" content="https://miklosnemeth.github.io/mnkarp/">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="hu_HU">
+<meta property="og:image" content="https://miklosnemeth.github.io/mnkarp/images/main.png">
+<meta property="og:image:width" content="1126">
+<meta property="og:image:height" content="1418">
+<meta property="og:image:alt" content="The mnKarp window: mnKord above mnArpee">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="mnKarp – free chord + arpeggiator rack plugin (VST3) for Windows">
+<meta name="twitter:description" content="mnKarp is a free MIDI rack plugin (VST3) for Windows: mnKord turns one key into a chord, mnArpee plays it as a pattern, each with an on/off switch. Rack presets, automation, drag the result into your DAW.">
+<meta name="twitter:image" content="https://miklosnemeth.github.io/mnkarp/images/main.png">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b1510">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1510'/%3E%3Crect x='5' y='6' width='22' height='8' rx='2' fill='%233ddc84'/%3E%3Crect x='5' y='18' width='22' height='8' rx='2' fill='%23fbfcfb'/%3E%3C/svg%3E">
+<link rel="preload" href="assets/fonts/Montserrat.ttf" as="font" type="font/ttf" crossorigin>
+<style>
+@font-face { font-family: 'Montserrat'; src: url(assets/fonts/Montserrat.ttf) format('truetype'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'Roboto Condensed'; src: url(assets/fonts/RobotoCondensed.ttf) format('truetype'); font-weight: 100 900; font-display: swap; }
+
+:root {
+  --bg: #0b1510;
+  --panel: #13211a;
+  --line: #2d4a3a;
+  --control: #1c3026;
+  --text: #f0faf3;
+  --muted: #b4cdbc;
+  --accent: #3ddc84;
+  --accent-ink: #04210f;
+  --playing: #ffa53a;
+  --radius: 14px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(1100px 520px at 78% -8%, rgba(61, 220, 132, 0.13), transparent 60%),
+    radial-gradient(900px 480px at 0% 8%, rgba(255, 165, 58, 0.06), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+img { max-width: 100%; display: block; }
+.wrap { width: min(1080px, 100% - 40px); margin-inline: auto; }
+.display { font-family: 'Montserrat', 'Segoe UI', sans-serif; font-weight: 800; letter-spacing: -0.02em; }
+.condensed { font-family: 'Roboto Condensed', 'Segoe UI', sans-serif; font-weight: 700; }
+
+
+/* top bar */
+.top { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; gap: 16px; }
+.brand { font-size: 22px; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.brand svg { width: 28px; height: 28px; }
+.nav { display: flex; align-items: center; gap: 22px; font-size: 15px; color: var(--muted); }
+.nav a { text-decoration: none; }
+.nav a:hover { color: var(--text); }
+
+/* hero */
+.hero { padding: 54px 0 30px; text-align: center; }
+.eyebrow { display: inline-block; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); border: 1px solid rgba(61, 220, 132, 0.35); background: rgba(61, 220, 132, 0.07); padding: 5px 14px; border-radius: 999px; }
+.hero h1 { font-size: clamp(64px, 13vw, 132px); line-height: 1; margin: 22px 0 6px; }
+.hero h1 span { color: var(--accent); }
+.tagline { font-size: clamp(22px, 3.6vw, 34px); font-weight: 700; margin: 0 0 14px; }
+.lede { max-width: 680px; margin: 0 auto 30px; color: var(--muted); font-size: 19px; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.btn { display: inline-flex; align-items: center; gap: 9px; padding: 13px 22px; border-radius: 12px; font-weight: 700; text-decoration: none; border: 1px solid var(--line); background: var(--control); color: var(--text); transition: transform .12s, background .12s; }
+.btn:hover { transform: translateY(-1px); background: #284536; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { background: #62e898; }
+.btn svg { width: 18px; height: 18px; }
+.facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; margin: 26px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 14px; }
+.facts li::before { content: "•"; color: var(--accent); margin-right: 8px; }
+
+.shot { margin: 46px auto 0; position: relative; }
+.shot::before { content: ""; position: absolute; inset: 8% 6% -4%; background: radial-gradient(closest-side, rgba(61, 220, 132, 0.28), transparent); filter: blur(34px); z-index: -1; }
+.shot img { border-radius: var(--radius); border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55); width: 100%; }
+
+/* sections */
+section { padding: 78px 0 0; }
+h2 { font-size: clamp(28px, 4.4vw, 42px); margin: 0 0 8px; line-height: 1.15; }
+.sub { color: var(--muted); max-width: 640px; margin: 0 0 34px; }
+
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: step; }
+.step { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; position: relative; }
+.step::before { counter-increment: step; content: counter(step); font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 14px; color: var(--accent-ink); background: var(--accent); width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 14px; }
+.step h3 { margin: 0 0 6px; font-size: 19px; }
+.step p { margin: 0; color: var(--muted); font-size: 16px; }
+
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; transition: border-color .15s, transform .15s; }
+.card:hover { border-color: rgba(61, 220, 132, 0.5); transform: translateY(-2px); }
+.card .ic { width: 38px; height: 38px; border-radius: 10px; background: rgba(61, 220, 132, 0.12); color: var(--accent); display: grid; place-items: center; margin-bottom: 14px; }
+.card .ic svg { width: 22px; height: 22px; }
+.card h3 { margin: 0 0 6px; font-size: 18px; }
+.card p { margin: 0; color: var(--muted); font-size: 15.5px; }
+code { font-family: Consolas, 'Cascadia Mono', monospace; font-size: 0.92em; background: var(--control); padding: 1px 6px; border-radius: 5px; }
+
+.gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.gallery figure { margin: 0; }
+.gallery figure:first-child { grid-column: 1 / -1; }
+.gallery img { border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.4); width: 100%; }
+.gallery figcaption { color: var(--muted); font-size: 15px; margin-top: 10px; text-align: center; }
+
+.get { display: grid; grid-template-columns: 1.25fr 1fr; gap: 20px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px; }
+.box h3 { margin: 0 0 10px; font-size: 20px; }
+.box ol, .box ul { margin: 0 0 18px; padding-left: 20px; color: var(--muted); }
+.box li { margin: 5px 0; }
+.box p { color: var(--muted); margin: 0 0 14px; }
+.box strong { color: var(--text); }
+
+/* author */
+.author { margin-top: 84px; padding: 46px 0 52px; border-top: 1px solid var(--line); background: linear-gradient(180deg, rgba(61, 220, 132, 0.05), transparent 70%); text-align: center; }
+.author .tag { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--playing); font-weight: 700; }
+.author .name { font-size: clamp(30px, 6vw, 54px); margin: 12px 0 6px; }
+.author .name b { color: var(--accent); font-weight: inherit; }
+.author p { margin: 0 auto; max-width: 560px; color: var(--muted); }
+.legal { margin-top: 26px; font-size: 14px; color: var(--muted); }
+.legal a { color: var(--text); }
+
+@media (max-width: 860px) {
+  .steps, .cards, .get { grid-template-columns: 1fr; }
+  .gallery { grid-template-columns: 1fr; }
+  .nav a.hide-sm { display: none; }
+  body { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+
+/* language links */
+.lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--panel); font-size: 13px; font-weight: 700; }
+.lang .cur, .lang a { padding: 4px 12px; border-radius: 999px; }
+.lang .cur { background: var(--accent); color: var(--accent-ink); }
+.lang a { color: var(--muted); }
+.lang a:hover { color: var(--text); }
+
+/* accessibility */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip { position: absolute; left: 12px; top: -60px; background: var(--accent); color: var(--accent-ink); padding: 10px 16px; border-radius: 10px; font-weight: 700; z-index: 10; text-decoration: none; }
+.skip:focus { top: 12px; }
+
+/* lists */
+ul.cards, ol.steps, ul.facts, ul.chips, ul.symbols, ul.plain { list-style: none; }
+ol.steps, ul.cards { margin: 0; padding: 0; }
+.listh { font-size: 22px; margin: 46px 0 6px; }
+.featlists { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 18px; }
+.fl { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 24px; }
+.fl h4 { margin: 0 0 10px; font-size: 17px; color: var(--accent); }
+.fl ul { margin: 0; padding-left: 20px; color: var(--muted); font-size: 15.5px; }
+.fl li { margin: 7px 0; }
+
+.presetgroups { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.pg { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; }
+.pg h3 { margin: 0 0 10px; font-size: 17px; color: var(--accent); }
+.pg ul { list-style: none; margin: 0; padding: 0; font-size: 15.5px; }
+.pg li { margin: 7px 0; color: var(--muted); }
+.pg li strong { color: var(--text); font-weight: 600; }
+.pg .tags { display: block; font-size: 13px; color: var(--muted); opacity: 0.85; }
+
+.symbols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 22px; margin: 18px 0 0; padding: 0; }
+.symbols li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 15.5px; }
+.symbols code { min-width: 74px; color: var(--accent); font-weight: 700; }
+.symbols span { color: var(--muted); }
+.twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; padding: 0; }
+.chips li { background: var(--control); border: 1px solid var(--line); border-radius: 999px; padding: 5px 14px; font-size: 15px; }
+.plain { margin: 18px 0 0; padding-left: 22px; list-style: disc; color: var(--muted); }
+.plain li { margin: 8px 0; }
+
+.faq { display: grid; gap: 10px; margin-top: 18px; }
+.faq details { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 0 22px; }
+.faq summary { cursor: pointer; padding: 16px 0; font-weight: 700; font-size: 17px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; color: var(--accent); font-size: 22px; line-height: 1; }
+.faq details[open] summary::after { content: "–"; }
+.faq details p { margin: 0 0 18px; color: var(--muted); }
+
+@media (max-width: 860px) {
+  .featlists, .presetgroups, .symbols, .twocol { grid-template-columns: 1fr; }
+}
+.btn:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+</style>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "WebSite",
+   "@id": "https://miklosnemeth.github.io/mnkarp/#website",
+   "url": "https://miklosnemeth.github.io/mnkarp/",
+   "name": "mnKarp",
+   "inLanguage": [
+    "en",
+    "hu"
+   ],
+   "publisher": {
+    "@id": "https://miklosnemeth.github.io/mnkarp/#author"
+   }
+  },
+  {
+   "@type": "Person",
+   "@id": "https://miklosnemeth.github.io/mnkarp/#author",
+   "name": "Miklós Németh",
+   "alternateName": "Németh Miklós",
+   "url": "https://github.com/miklosnemeth",
+   "jobTitle": "Vibecoder"
+  },
+  {
+   "@type": "SoftwareApplication",
+   "@id": "https://miklosnemeth.github.io/mnkarp/#app",
+   "name": "mnKarp",
+   "url": "https://miklosnemeth.github.io/mnkarp/",
+   "description": "mnKarp is a free MIDI rack plugin (VST3) for Windows: mnKord turns one key into a chord, mnArpee plays it as a pattern, each with an on/off switch. Rack presets, automation, drag the result into your DAW.",
+   "inLanguage": "en",
+   "applicationCategory": "MultimediaApplication",
+   "applicationSubCategory": "MIDI effect, VST3 audio plugin",
+   "operatingSystem": "Windows 10, Windows 11",
+   "softwareVersion": "1.0.0",
+   "downloadUrl": "https://github.com/miklosnemeth/mnkarp/releases/latest",
+   "installUrl": "https://github.com/miklosnemeth/mnkarp/releases/latest",
+   "fileFormat": "application/vnd.steinberg.vst3",
+   "softwareRequirements": "A DAW that hosts VST3 plugins",
+   "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+   "isAccessibleForFree": true,
+   "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+   },
+   "author": {
+    "@id": "https://miklosnemeth.github.io/mnkarp/#author"
+   },
+   "image": "https://miklosnemeth.github.io/mnkarp/images/main.png",
+   "screenshot": [
+    "https://miklosnemeth.github.io/mnkarp/images/main.png"
+   ],
+   "featureList": [
+    "mnKord (chords) above mnArpee (arpeggiator): the MIDI goes through mnKord, then mnArpee.",
+    "A power switch for each stage; a stage that is off is dimmed and still editable.",
+    "Switching a stage off releases the notes it is sounding.",
+    "Fold a stage's window away; the project remembers it.",
+    "One size for both windows, from 60% to 115%; both are always equally wide.",
+    "The notes between the two stages, live.",
+    "Rack presets: both plugins' presets and the switches under one name, shared by every project.",
+    "Previous / next, Save, Save as, Revert, Delete; a dot shows unsaved changes.",
+    "The DAW's program list is the list of the rack presets (128 slots, oldest first).",
+    "Host parameters: the two switches and mnArpee's eight values, for automation and MIDI controllers.",
+    "Drag MIDI: the last take as a MIDI clip (with its tempo, starting on a bar), or save it as a file.",
+    "The real mnKord and mnArpee: their presets, libraries, browsers and Undo / Redo work as in the single plugins.",
+    "mnKord's and mnArpee's preset libraries are shared with the single plugins.",
+    "The project keeps the full state of both stages.",
+    "Windows installer; user guide in English and Hungarian."
+   ]
+  },
+  {
+   "@type": "FAQPage",
+   "@id": "https://miklosnemeth.github.io/mnkarp/#faq",
+   "inLanguage": "en",
+   "mainEntity": [
+    {
+     "@type": "Question",
+     "name": "Is mnKarp free?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Yes. It is free and open source under the AGPL-3.0, with no account and no copy protection."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Do I need mnKord and mnArpee too?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "No. mnKarp has both inside. If you have them, the three work side by side and share the preset libraries of mnKord and mnArpee."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Why is there no sound?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "mnKarp is a MIDI effect: put a synth or a sampler after it on the same instrument track."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Can I automate the arpeggiator?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Yes. mnArpee's rate, octave, gate, swing, steps, latch, group and cut, and the two on/off switches, are host parameters."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "How do I get the result into my DAW as MIDI?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Play, then drag the Drag MIDI button onto a track. The clip starts on the bar of its first note and carries the tempo. A click saves it as a file instead."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Does it run on macOS or Linux?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Not yet: mnKarp is built for Windows (64-bit VST3)."
+     }
+    }
+   ]
+  }
+ ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<div class="wrap">
+  <header class="top">
+    <a class="brand display" href="./" aria-label="mnKarp"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13211a"/><rect x="5" y="6" width="22" height="8" rx="2" fill="#3ddc84"/><rect x="5" y="18" width="22" height="8" rx="2" fill="#fbfcfb"/></svg>mnKarp</a>
+    <nav class="nav" aria-label="Main">
+      <a class="hide-sm" href="#features">Features</a>
+      <a class="hide-sm" href="#faq">FAQ</a>
+      <a class="hide-sm" href="#get">Get it</a>
+      <span class="lang" role="group" aria-label="Language / Nyelv"><span class="cur" aria-current="true">EN</span><a href="hu/" hreflang="hu" lang="hu" title="Magyar">HU</a></span>
+    </nav>
+  </header>
+  <main id="main">
+    <div class="hero">
+      <p class="eyebrow">Free MIDI rack plugin · VST3</p>
+      <h1 class="display">mn<span>Karp</span><span class="sr-only"> – chords and arpeggios in one rack (VST3)</span></h1>
+      <p class="tagline">Chords and arpeggios in one rack.</p>
+      <p class="lede">mnKarp puts mnKord (one key, a whole chord) above mnArpee (a step-pattern arpeggiator) in one plugin. Play a single note and hear the chord as a pattern; switch either one off and the MIDI passes it untouched.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/miklosnemeth/mnkarp/releases/latest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 20h16"/></svg>Download for Windows</a>
+        <a class="btn" href="mnKarp-User-Guide.pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg>User guide (PDF)</a>
+        <a class="btn" href="https://github.com/miklosnemeth/mnkarp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>Source on GitHub</a>
+      </div>
+      <ul class="facts">
+        <li>v1.0.0</li>
+        <li>VST3 · Windows x64</li>
+        <li>Free and open source (AGPL-3.0)</li>
+      </ul>
+      <div class="shot"><img src="images/main.png" width="1126" height="1418" alt="The mnKarp window: the rack presets on top, mnKord&#x27;s keyboards, the notes between, mnArpee&#x27;s pattern grid"></div>
+    </div>
+    <section aria-labelledby="how">
+      <h2 id="how" class="display">How it works</h2>
+      <p class="sub">mnKarp is a MIDI effect: it makes no sound itself, it sits in front of your synth.</p>
+      <ol class="steps">
+        <li class="step"><h3>Play one key</h3><p>Your MIDI keyboard sends a single note.</p></li>
+        <li class="step"><h3>mnKord makes it a chord</h3><p>The key is looked up in mnKord&#x27;s preset and becomes a chord. You see the notes in the line under it.</p></li>
+        <li class="step"><h3>mnArpee plays it as a pattern</h3><p>The chord goes on to mnArpee, which plays it in time with your DAW, step by step.</p></li>
+      </ol>
+    </section>
+    <section id="features" aria-labelledby="feat">
+      <h2 id="feat" class="display">Two plugins, one rack</h2>
+      <p class="sub">The real mnKord and mnArpee, with what a rack adds.</p>
+      <ul class="cards">
+        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="7"/><path d="M12 3v7"/></svg></div><h3>On/off for each</h3><p>A power switch on each stage. Off, the MIDI passes it untouched, and nothing it played is left hanging.</p></li>
+        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h6"/></svg></div><h3>Rack presets</h3><p>Both plugins&#x27; presets and the two switches under one name. They are also the DAW&#x27;s program list.</p></li>
+        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18c3 0 3-12 6-12s3 12 6 12 3-8 6-8"/></svg></div><h3>Automation</h3><p>The switches and mnArpee&#x27;s rate, gate, swing, octave, steps, latch, group and cut are host parameters.</p></li>
+        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 20h16"/></svg></div><h3>Drag MIDI</h3><p>Drag the last thing you played into the DAW as a MIDI clip, on the bar it started on.</p></li>
+        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v8M12 5v8M16 5v8"/></svg></div><h3>See the notes</h3><p>A line between the two stages shows the chord that mnKord hands to mnArpee, live.</p></li>
+        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/></svg></div><h3>Fits the screen</h3><p>One size for both windows (60 to 115%), equally wide, and fold a stage away when you don&#x27;t need it.</p></li>
+      </ul>
+      <h3 class="listh">Everything in the box</h3>
+      <p class="sub">The full feature list of mnKarp 1.0.0.</p>
+      <div class="featlists">
+        <div class="fl"><h4>The rack</h4><ul>
+          <li>mnKord (chords) above mnArpee (arpeggiator): the MIDI goes through mnKord, then mnArpee.</li>
+          <li>A power switch for each stage; a stage that is off is dimmed and still editable.</li>
+          <li>Switching a stage off releases the notes it is sounding.</li>
+          <li>Fold a stage&#x27;s window away; the project remembers it.</li>
+          <li>One size for both windows, from 60% to 115%; both are always equally wide.</li>
+          <li>The notes between the two stages, live.</li>
+        </ul></div>
+        <div class="fl"><h4>Presets and the DAW</h4><ul>
+          <li>Rack presets: both plugins&#x27; presets and the switches under one name, shared by every project.</li>
+          <li>Previous / next, Save, Save as, Revert, Delete; a dot shows unsaved changes.</li>
+          <li>The DAW&#x27;s program list is the list of the rack presets (128 slots, oldest first).</li>
+          <li>Host parameters: the two switches and mnArpee&#x27;s eight values, for automation and MIDI controllers.</li>
+          <li>Drag MIDI: the last take as a MIDI clip (with its tempo, starting on a bar), or save it as a file.</li>
+        </ul></div>
+        <div class="fl"><h4>Inside</h4><ul>
+          <li>The real mnKord and mnArpee: their presets, libraries, browsers and Undo / Redo work as in the single plugins.</li>
+          <li>mnKord&#x27;s and mnArpee&#x27;s preset libraries are shared with the single plugins.</li>
+          <li>The project keeps the full state of both stages.</li>
+          <li>Windows installer; user guide in English and Hungarian.</li>
+        </ul></div>
+      </div>
+    </section>
+    <section id="requirements" aria-labelledby="req">
+      <h2 id="req" class="display">Requirements</h2>
+      <ul class="plain">
+        <li>Windows 10 or 11, 64-bit</li>
+        <li>A DAW that hosts VST3 plugins (Bitwig, FL Studio, Reaper, Cubase, Ableton Live ...)</li>
+        <li>A synth or sampler after mnKarp on the same track</li>
+      </ul>
+    </section>
+    <section id="faq" aria-labelledby="faqh">
+      <h2 id="faqh" class="display">Questions</h2>
+      <div class="faq">
+        <details><summary>Is mnKarp free?</summary><p>Yes. It is free and open source under the AGPL-3.0, with no account and no copy protection.</p></details>
+        <details><summary>Do I need mnKord and mnArpee too?</summary><p>No. mnKarp has both inside. If you have them, the three work side by side and share the preset libraries of mnKord and mnArpee.</p></details>
+        <details><summary>Why is there no sound?</summary><p>mnKarp is a MIDI effect: put a synth or a sampler after it on the same instrument track.</p></details>
+        <details><summary>Can I automate the arpeggiator?</summary><p>Yes. mnArpee's rate, octave, gate, swing, steps, latch, group and cut, and the two on/off switches, are host parameters.</p></details>
+        <details><summary>How do I get the result into my DAW as MIDI?</summary><p>Play, then drag the <strong>Drag MIDI</strong> button onto a track. The clip starts on the bar of its first note and carries the tempo. A click saves it as a file instead.</p></details>
+        <details><summary>Does it run on macOS or Linux?</summary><p>Not yet: mnKarp is built for Windows (64-bit VST3).</p></details>
+      </div>
+    </section>
+    <section id="get" aria-labelledby="getit">
+      <h2 id="getit" class="display">Get mnKarp</h2>
+      <p class="sub">Free, no account, no copy protection.</p>
+      <div class="get">
+        <div class="box"><h3>Windows</h3><ol>
+          <li>Download <strong>mnKarp-1.0.0-win-x64-setup.exe</strong> from the latest release.</li>
+          <li>Run it. The plugin goes to the standard VST3 folder.</li>
+          <li>In your DAW, put mnKarp on an instrument track, before a synth.</li>
+        </ol><a class="btn primary" href="https://github.com/miklosnemeth/mnkarp/releases/latest">Download the installer</a></div>
+        <div class="box"><h3>Documentation and source</h3><ul>
+          <li><a href="mnKarp-User-Guide.pdf">User guide (PDF)</a></li>
+          <li><a href="https://github.com/miklosnemeth/mnkarp">Source code on GitHub</a></li>
+          <li><a href="https://github.com/miklosnemeth/mnkarp/blob/master/CHANGELOG.md">What changed</a></li>
+          <li><a href="https://miklosnemeth.github.io/mnkord/">mnKord, the chord plugin alone</a></li>
+          <li><a href="https://github.com/miklosnemeth/mnArpee">mnArpee, the arpeggiator alone</a></li>
+        </ul><p>Only for Windows for now.</p></div>
+      </div>
+    </section>
+  </main>
+</div>
+<footer class="author">
+  <div class="wrap">
+    <div class="tag"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 8-5 4 5 4M16 8l5 4-5 4M14 5l-4 14"/></svg>Vibecoded by</div>
+    <p class="name display">Miklós <span>Németh</span></p>
+    <p>mnKarp, mnKord and mnArpee are made in Hungary, as free software.</p>
+    <p class="legal">© 2026 Miklós Németh · <a href="https://github.com/miklosnemeth/mnkarp/blob/master/LICENSE">AGPL-3.0</a> · Built with JUCE</p>
+  </div>
+</footer>
+</body>
+</html>

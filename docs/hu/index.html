@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mnKarp – ingyenes akkord + arpeggiátor rack plugin (VST3) Windowsra</title>
+<meta name="description" content="Az mnKarp ingyenes MIDI rack plugin (VST3) Windowsra: az mnKord egy billentyűből akkordot csinál, az mnArpee mintában játssza, mindkettő kikapcsolható. Rack presetek, automatizálás, a végeredmény áthúzható a DAW-ba.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="author" content="Németh Miklós">
+<link rel="canonical" href="https://miklosnemeth.github.io/mnkarp/hu/">
+<link rel="alternate" hreflang="en" href="https://miklosnemeth.github.io/mnkarp/">
+<link rel="alternate" hreflang="hu" href="https://miklosnemeth.github.io/mnkarp/hu/">
+<link rel="alternate" hreflang="x-default" href="https://miklosnemeth.github.io/mnkarp/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="mnKarp">
+<meta property="og:title" content="mnKarp – ingyenes akkord + arpeggiátor rack plugin (VST3) Windowsra">
+<meta property="og:description" content="Az mnKarp ingyenes MIDI rack plugin (VST3) Windowsra: az mnKord egy billentyűből akkordot csinál, az mnArpee mintában játssza, mindkettő kikapcsolható. Rack presetek, automatizálás, a végeredmény áthúzható a DAW-ba.">
+<meta property="og:url" content="https://miklosnemeth.github.io/mnkarp/hu/">
+<meta property="og:locale" content="hu_HU">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:image" content="https://miklosnemeth.github.io/mnkarp/images/main.png">
+<meta property="og:image:width" content="1126">
+<meta property="og:image:height" content="1418">
+<meta property="og:image:alt" content="Az mnKarp ablaka: felül az mnKord, alatta az mnArpee">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="mnKarp – ingyenes akkord + arpeggiátor rack plugin (VST3) Windowsra">
+<meta name="twitter:description" content="Az mnKarp ingyenes MIDI rack plugin (VST3) Windowsra: az mnKord egy billentyűből akkordot csinál, az mnArpee mintában játssza, mindkettő kikapcsolható. Rack presetek, automatizálás, a végeredmény áthúzható a DAW-ba.">
+<meta name="twitter:image" content="https://miklosnemeth.github.io/mnkarp/images/main.png">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b1510">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1510'/%3E%3Crect x='5' y='6' width='22' height='8' rx='2' fill='%233ddc84'/%3E%3Crect x='5' y='18' width='22' height='8' rx='2' fill='%23fbfcfb'/%3E%3C/svg%3E">
+<link rel="preload" href="../assets/fonts/Montserrat.ttf" as="font" type="font/ttf" crossorigin>
+<style>
+@font-face { font-family: 'Montserrat'; src: url(../assets/fonts/Montserrat.ttf) format('truetype'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'Roboto Condensed'; src: url(../assets/fonts/RobotoCondensed.ttf) format('truetype'); font-weight: 100 900; font-display: swap; }
+
+:root {
+  --bg: #0b1510;
+  --panel: #13211a;
+  --line: #2d4a3a;
+  --control: #1c3026;
+  --text: #f0faf3;
+  --muted: #b4cdbc;
+  --accent: #3ddc84;
+  --accent-ink: #04210f;
+  --playing: #ffa53a;
+  --radius: 14px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(1100px 520px at 78% -8%, rgba(61, 220, 132, 0.13), transparent 60%),
+    radial-gradient(900px 480px at 0% 8%, rgba(255, 165, 58, 0.06), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+img { max-width: 100%; display: block; }
+.wrap { width: min(1080px, 100% - 40px); margin-inline: auto; }
+.display { font-family: 'Montserrat', 'Segoe UI', sans-serif; font-weight: 800; letter-spacing: -0.02em; }
+.condensed { font-family: 'Roboto Condensed', 'Segoe UI', sans-serif; font-weight: 700; }
+
+
+/* top bar */
+.top { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; gap: 16px; }
+.brand { font-size: 22px; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.brand svg { width: 28px; height: 28px; }
+.nav { display: flex; align-items: center; gap: 22px; font-size: 15px; color: var(--muted); }
+.nav a { text-decoration: none; }
+.nav a:hover { color: var(--text); }
+
+/* hero */
+.hero { padding: 54px 0 30px; text-align: center; }
+.eyebrow { display: inline-block; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); border: 1px solid rgba(61, 220, 132, 0.35); background: rgba(61, 220, 132, 0.07); padding: 5px 14px; border-radius: 999px; }
+.hero h1 { font-size: clamp(64px, 13vw, 132px); line-height: 1; margin: 22px 0 6px; }
+.hero h1 span { color: var(--accent); }
+.tagline { font-size: clamp(22px, 3.6vw, 34px); font-weight: 700; margin: 0 0 14px; }
+.lede { max-width: 680px; margin: 0 auto 30px; color: var(--muted); font-size: 19px; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.btn { display: inline-flex; align-items: center; gap: 9px; padding: 13px 22px; border-radius: 12px; font-weight: 700; text-decoration: none; border: 1px solid var(--line); background: var(--control); color: var(--text); transition: transform .12s, background .12s; }
+.btn:hover { transform: translateY(-1px); background: #284536; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { background: #62e898; }
+.btn svg { width: 18px; height: 18px; }
+.facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; margin: 26px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 14px; }
+.facts li::before { content: "•"; color: var(--accent); margin-right: 8px; }
+
+.shot { margin: 46px auto 0; position: relative; }
+.shot::before { content: ""; position: absolute; inset: 8% 6% -4%; background: radial-gradient(closest-side, rgba(61, 220, 132, 0.28), transparent); filter: blur(34px); z-index: -1; }
+.shot img { border-radius: var(--radius); border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55); width: 100%; }
+
+/* sections */
+section { padding: 78px 0 0; }
+h2 { font-size: clamp(28px, 4.4vw, 42px); margin: 0 0 8px; line-height: 1.15; }
+.sub { color: var(--muted); max-width: 640px; margin: 0 0 34px; }
+
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: step; }
+.step { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; position: relative; }
+.step::before { counter-increment: step; content: counter(step); font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 14px; color: var(--accent-ink); background: var(--accent); width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 14px; }
+.step h3 { margin: 0 0 6px; font-size: 19px; }
+.step p { margin: 0; color: var(--muted); font-size: 16px; }
+
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; transition: border-color .15s, transform .15s; }
+.card:hover { border-color: rgba(61, 220, 132, 0.5); transform: translateY(-2px); }
+.card .ic { width: 38px; height: 38px; border-radius: 10px; background: rgba(61, 220, 132, 0.12); color: var(--accent); display: grid; place-items: center; margin-bottom: 14px; }
+.card .ic svg { width: 22px; height: 22px; }
+.card h3 { margin: 0 0 6px; font-size: 18px; }
+.card p { margin: 0; color: var(--muted); font-size: 15.5px; }
+code { font-family: Consolas, 'Cascadia Mono', monospace; font-size: 0.92em; background: var(--control); padding: 1px 6px; border-radius: 5px; }
+
+.gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.gallery figure { margin: 0; }
+.gallery figure:first-child { grid-column: 1 / -1; }
+.gallery img { border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.4); width: 100%; }
+.gallery figcaption { color: var(--muted); font-size: 15px; margin-top: 10px; text-align: center; }
+
+.get { display: grid; grid-template-columns: 1.25fr 1fr; gap: 20px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px; }
+.box h3 { margin: 0 0 10px; font-size: 20px; }
+.box ol, .box ul { margin: 0 0 18px; padding-left: 20px; color: var(--muted); }
+.box li { margin: 5px 0; }
+.box p { color: var(--muted); margin: 0 0 14px; }
+.box strong { color: var(--text); }
+
+/* author */
+.author { margin-top: 84px; padding: 46px 0 52px; border-top: 1px solid var(--line); background: linear-gradient(180deg, rgba(61, 220, 132, 0.05), transparent 70%); text-align: center; }
+.author .tag { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--playing); font-weight: 700; }
+.author .name { font-size: clamp(30px, 6vw, 54px); margin: 12px 0 6px; }
+.author .name b { color: var(--accent); font-weight: inherit; }
+.author p { margin: 0 auto; max-width: 560px; color: var(--muted); }
+.legal { margin-top: 26px; font-size: 14px; color: var(--muted); }
+.legal a { color: var(--text); }
+
+@media (max-width: 860px) {
+  .steps, .cards, .get { grid-template-columns: 1fr; }
+  .gallery { grid-template-columns: 1fr; }
+  .nav a.hide-sm { display: none; }
+  body { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+
+/* language links */
+.lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--panel); font-size: 13px; font-weight: 700; }
+.lang .cur, .lang a { padding: 4px 12px; border-radius: 999px; }
+.lang .cur { background: var(--accent); color: var(--accent-ink); }
+.lang a { color: var(--muted); }
+.lang a:hover { color: var(--text); }
+
+/* accessibility */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip { position: absolute; left: 12px; top: -60px; background: var(--accent); color: var(--accent-ink); padding: 10px 16px; border-radius: 10px; font-weight: 700; z-index: 10; text-decoration: none; }
+.skip:focus { top: 12px; }
+
+/* lists */
+ul.cards, ol.steps, ul.facts, ul.chips, ul.symbols, ul.plain { list-style: none; }
+ol.steps, ul.cards { margin: 0; padding: 0; }
+.listh { font-size: 22px; margin: 46px 0 6px; }
+.featlists { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 18px; }
+.fl { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 24px; }
+.fl h4 { margin: 0 0 10px; font-size: 17px; color: var(--accent); }
+.fl ul { margin: 0; padding-left: 20px; color: var(--muted); font-size: 15.5px; }
+.fl li { margin: 7px 0; }
+
+.presetgroups { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.pg { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; }
+.pg h3 { margin: 0 0 10px; font-size: 17px; color: var(--accent); }
+.pg ul { list-style: none; margin: 0; padding: 0; font-size: 15.5px; }
+.pg li { margin: 7px 0; color: var(--muted); }
+.pg li strong { color: var(--text); font-weight: 600; }
+.pg .tags { display: block; font-size: 13px; color: var(--muted); opacity: 0.85; }
+
+.symbols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 22px; margin: 18px 0 0; padding: 0; }
+.symbols li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 15.5px; }
+.symbols code { min-width: 74px; color: var(--accent); font-weight: 700; }
+.symbols span { color: var(--muted); }
+.twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; padding: 0; }
+.chips li { background: var(--control); border: 1px solid var(--line); border-radius: 999px; padding: 5px 14px; font-size: 15px; }
+.plain { margin: 18px 0 0; padding-left: 22px; list-style: disc; color: var(--muted); }
+.plain li { margin: 8px 0; }
+
+.faq { display: grid; gap: 10px; margin-top: 18px; }
+.faq details { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 0 22px; }
+.faq summary { cursor: pointer; padding: 16px 0; font-weight: 700; font-size: 17px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; color: var(--accent); font-size: 22px; line-height: 1; }
+.faq details[open] summary::after { content: "–"; }
+.faq details p { margin: 0 0 18px; color: var(--muted); }
+
+@media (max-width: 860px) {
+  .featlists, .presetgroups, .symbols, .twocol { grid-template-columns: 1fr; }
+}
+.btn:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+</style>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "WebSite",
+   "@id": "https://miklosnemeth.github.io/mnkarp/#website",
+   "url": "https://miklosnemeth.github.io/mnkarp/",
+   "name": "mnKarp",
+   "inLanguage": [
+    "en",
+    "hu"
+   ],
+   "publisher": {
+    "@id": "https://miklosnemeth.github.io/mnkarp/#author"
+   }
+  },
+  {
+   "@type": "Person",
+   "@id": "https://miklosnemeth.github.io/mnkarp/#author",
+   "name": "Miklós Németh",
+   "alternateName": "Németh Miklós",
+   "url": "https://github.com/miklosnemeth",
+   "jobTitle": "Vibecoder"
+  },
+  {
+   "@type": "SoftwareApplication",
+   "@id": "https://miklosnemeth.github.io/mnkarp/#app",
+   "name": "mnKarp",
+   "url": "https://miklosnemeth.github.io/mnkarp/hu/",
+   "description": "Az mnKarp ingyenes MIDI rack plugin (VST3) Windowsra: az mnKord egy billentyűből akkordot csinál, az mnArpee mintában játssza, mindkettő kikapcsolható. Rack presetek, automatizálás, a végeredmény áthúzható a DAW-ba.",
+   "inLanguage": "hu",
+   "applicationCategory": "MultimediaApplication",
+   "applicationSubCategory": "MIDI effect, VST3 audio plugin",
+   "operatingSystem": "Windows 10, Windows 11",
+   "softwareVersion": "1.0.0",
+   "downloadUrl": "https://github.com/miklosnemeth/mnkarp/releases/latest",
+   "installUrl": "https://github.com/miklosnemeth/mnkarp/releases/latest",
+   "fileFormat": "application/vnd.steinberg.vst3",
+   "softwareRequirements": "A DAW that hosts VST3 plugins",
+   "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+   "isAccessibleForFree": true,
+   "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+   },
+   "author": {
+    "@id": "https://miklosnemeth.github.io/mnkarp/#author"
+   },
+   "image": "https://miklosnemeth.github.io/mnkarp/images/main.png",
+   "screenshot": [
+    "https://miklosnemeth.github.io/mnkarp/images/main.png"
+   ],
+   "featureList": [
+    "Felül az mnKord (akkordok), alatta az mnArpee (arpeggiátor): a MIDI előbb az mnKordon, aztán az mnArpee-n megy át.",
+    "Kapcsoló mindkét fokozatra; a kikapcsolt fokozat halvány, de szerkeszthető.",
+    "Kikapcsoláskor a fokozat felengedi a hangjait.",
+    "A fokozat ablaka összecsukható; a projekt megjegyzi.",
+    "Egy méret mindkét ablakra, 60 és 115% között; a kettő mindig egyforma széles.",
+    "A két fokozat közötti hangok, élőben.",
+    "Rack presetek: a két plugin presetje és a kapcsolók egy név alatt, minden projekt közösen használja.",
+    "Előző / következő, Save, Save as, Revert, Delete; egy pötty jelzi a nem mentett változást.",
+    "A DAW programlistája a rack presetek listája (128 hely, a legrégebbitől kezdve).",
+    "Host-paraméterek: a két kapcsoló és az mnArpee nyolc értéke, automatizáláshoz és kontrollerhez.",
+    "MIDI áthúzás: az utolsó rész MIDI-klipként (tempóval, ütem elejéről), vagy fájlba mentve.",
+    "A valódi mnKord és mnArpee: a presetjeik, könyvtáraik, böngészőik és az Undo / Redo ugyanúgy működik, mint külön.",
+    "Az mnKord és az mnArpee presetkönyvtára közös az önálló pluginokéval.",
+    "A projekt mindkét fokozat teljes állapotát megtartja.",
+    "Windows telepítő; útmutató angolul és magyarul."
+   ]
+  },
+  {
+   "@type": "FAQPage",
+   "@id": "https://miklosnemeth.github.io/mnkarp/hu/#faq",
+   "inLanguage": "hu",
+   "mainEntity": [
+    {
+     "@type": "Question",
+     "name": "Ingyenes az mnKarp?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Igen. Ingyenes és nyílt forrású (AGPL-3.0), regisztráció és másolásvédelem nélkül."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Kell hozzá az mnKord és az mnArpee is?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Nem. Az mnKarp mindkettőt tartalmazza. Ha megvannak, a három egymás mellett működik, és közösen használják az mnKord és az mnArpee presetkönyvtárát."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Miért nem szól?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Az mnKarp MIDI-effekt: tegyél utána egy szintit vagy samplert ugyanarra a hangszersávra."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Automatizálható az arpeggiátor?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Igen. Az mnArpee rate, octave, gate, swing, steps, latch, group és cut értéke és a két kapcsoló host-paraméter."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Hogyan kerül a végeredmény MIDI-ként a DAW-ba?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Játssz, aztán húzd a Drag MIDI gombot egy sávra. A klip az első hang ütemének elején kezdődik, és a tempót is viszi. Kattintásra fájlba menti."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Fut macOS-en vagy Linuxon?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Még nem: az mnKarp Windowsra készül (64 bites VST3)."
+     }
+    }
+   ]
+  }
+ ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Ugrás a tartalomra</a>
+<div class="wrap">
+  <header class="top">
+    <a class="brand display" href="../" aria-label="mnKarp"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#13211a"/><rect x="5" y="6" width="22" height="8" rx="2" fill="#3ddc84"/><rect x="5" y="18" width="22" height="8" rx="2" fill="#fbfcfb"/></svg>mnKarp</a>
+    <nav class="nav" aria-label="Főmenü">
+      <a class="hide-sm" href="#features">Funkciók</a>
+      <a class="hide-sm" href="#faq">Kérdések</a>
+      <a class="hide-sm" href="#get">Letöltés</a>
+      <span class="lang" role="group" aria-label="Language / Nyelv"><span class="cur" aria-current="true">HU</span><a href="../" hreflang="en" lang="en" title="English">EN</a></span>
+    </nav>
+  </header>
+  <main id="main">
+    <div class="hero">
+      <p class="eyebrow">Ingyenes MIDI rack plugin · VST3</p>
+      <h1 class="display">mn<span>Karp</span><span class="sr-only"> – akkordok és arpeggiók egy rackben (VST3)</span></h1>
+      <p class="tagline">Akkordok és arpeggiók egy rackben.</p>
+      <p class="lede">Az mnKarp egy pluginban egymás fölé teszi az mnKordot (egy billentyű, egy egész akkord) és az mnArpee-t (lépésmintás arpeggiátor). Egy hangot játszol, és mintában hallod az akkordot; bármelyiket kikapcsolhatod, és a MIDI érintetlenül átmegy rajta.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/miklosnemeth/mnkarp/releases/latest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 20h16"/></svg>Letöltés Windowsra</a>
+        <a class="btn" href="../mnKarp-Felhasznaloi-utmutato.pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg>Útmutató (PDF)</a>
+        <a class="btn" href="https://github.com/miklosnemeth/mnkarp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>Forráskód a GitHubon</a>
+      </div>
+      <ul class="facts">
+        <li>v1.0.0</li>
+        <li>VST3 · Windows x64</li>
+        <li>Ingyenes, nyílt forrású (AGPL-3.0)</li>
+      </ul>
+      <div class="shot"><img src="../images/main.png" width="1126" height="1418" alt="Az mnKarp ablaka: felül a rack presetek, az mnKord billentyűi, a köztes hangok, az mnArpee mintarácsa"></div>
+    </div>
+    <section aria-labelledby="how">
+      <h2 id="how" class="display">Hogyan működik</h2>
+      <p class="sub">Az mnKarp MIDI-effekt: maga nem szól, a szintid elé kerül.</p>
+      <ol class="steps">
+        <li class="step"><h3>Lenyomsz egy billentyűt</h3><p>A MIDI-billentyűzet egyetlen hangot küld.</p></li>
+        <li class="step"><h3>Az mnKord akkordot csinál belőle</h3><p>A billentyűhöz az mnKord presetje akkordot rendel. A hangokat az alatta lévő sorban látod.</p></li>
+        <li class="step"><h3>Az mnArpee mintában játssza</h3><p>Az akkord az mnArpee-hoz kerül, amely a DAW tempójában, lépésről lépésre játssza.</p></li>
+      </ol>
+    </section>
+    <section id="features" aria-labelledby="feat">
+      <h2 id="feat" class="display">Két plugin, egy rack</h2>
+      <p class="sub">A valódi mnKord és mnArpee, és amit a rack hozzátesz.</p>
+      <ul class="cards">
+        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="7"/><path d="M12 3v7"/></svg></div><h3>Be/ki mindkettőre</h3><p>Mindkét fokozaton kapcsoló. Kikapcsolva a MIDI érintetlenül átmegy, és nem ragad be hang.</p></li>
+        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h6"/></svg></div><h3>Rack presetek</h3><p>A két plugin presetje és a két kapcsoló egy név alatt. Ez a DAW programlistája is.</p></li>
+        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18c3 0 3-12 6-12s3 12 6 12 3-8 6-8"/></svg></div><h3>Automatizálás</h3><p>A kapcsolók és az mnArpee rate, gate, swing, octave, steps, latch, group és cut értéke host-paraméter.</p></li>
+        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 20h16"/></svg></div><h3>MIDI áthúzás</h3><p>Az utoljára játszott részt MIDI-klipként behúzhatod a DAW-ba, az ütem elejére igazítva.</p></li>
+        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v8M12 5v8M16 5v8"/></svg></div><h3>Látod a hangokat</h3><p>A két fokozat közötti sor élőben mutatja, milyen akkordot ad át az mnKord az mnArpee-nak.</p></li>
+        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/></svg></div><h3>Elfér a képernyőn</h3><p>Egy méret mindkét ablakra (60–115%), egyforma szélességgel, és a nem használt fokozat összecsukható.</p></li>
+      </ul>
+      <h3 class="listh">Minden funkció</h3>
+      <p class="sub">Az mnKarp 1.0.0 teljes funkciólistája.</p>
+      <div class="featlists">
+        <div class="fl"><h4>A rack</h4><ul>
+          <li>Felül az mnKord (akkordok), alatta az mnArpee (arpeggiátor): a MIDI előbb az mnKordon, aztán az mnArpee-n megy át.</li>
+          <li>Kapcsoló mindkét fokozatra; a kikapcsolt fokozat halvány, de szerkeszthető.</li>
+          <li>Kikapcsoláskor a fokozat felengedi a hangjait.</li>
+          <li>A fokozat ablaka összecsukható; a projekt megjegyzi.</li>
+          <li>Egy méret mindkét ablakra, 60 és 115% között; a kettő mindig egyforma széles.</li>
+          <li>A két fokozat közötti hangok, élőben.</li>
+        </ul></div>
+        <div class="fl"><h4>Presetek és a DAW</h4><ul>
+          <li>Rack presetek: a két plugin presetje és a kapcsolók egy név alatt, minden projekt közösen használja.</li>
+          <li>Előző / következő, Save, Save as, Revert, Delete; egy pötty jelzi a nem mentett változást.</li>
+          <li>A DAW programlistája a rack presetek listája (128 hely, a legrégebbitől kezdve).</li>
+          <li>Host-paraméterek: a két kapcsoló és az mnArpee nyolc értéke, automatizáláshoz és kontrollerhez.</li>
+          <li>MIDI áthúzás: az utolsó rész MIDI-klipként (tempóval, ütem elejéről), vagy fájlba mentve.</li>
+        </ul></div>
+        <div class="fl"><h4>Belül</h4><ul>
+          <li>A valódi mnKord és mnArpee: a presetjeik, könyvtáraik, böngészőik és az Undo / Redo ugyanúgy működik, mint külön.</li>
+          <li>Az mnKord és az mnArpee presetkönyvtára közös az önálló pluginokéval.</li>
+          <li>A projekt mindkét fokozat teljes állapotát megtartja.</li>
+          <li>Windows telepítő; útmutató angolul és magyarul.</li>
+        </ul></div>
+      </div>
+    </section>
+    <section id="requirements" aria-labelledby="req">
+      <h2 id="req" class="display">Rendszerkövetelmények</h2>
+      <ul class="plain">
+        <li>Windows 10 vagy 11, 64 bites</li>
+        <li>VST3 pluginokat kezelő DAW (Bitwig, FL Studio, Reaper, Cubase, Ableton Live ...)</li>
+        <li>Egy szinti vagy sampler az mnKarp után, ugyanazon a sávon</li>
+      </ul>
+    </section>
+    <section id="faq" aria-labelledby="faqh">
+      <h2 id="faqh" class="display">Kérdések</h2>
+      <div class="faq">
+        <details><summary>Ingyenes az mnKarp?</summary><p>Igen. Ingyenes és nyílt forrású (AGPL-3.0), regisztráció és másolásvédelem nélkül.</p></details>
+        <details><summary>Kell hozzá az mnKord és az mnArpee is?</summary><p>Nem. Az mnKarp mindkettőt tartalmazza. Ha megvannak, a három egymás mellett működik, és közösen használják az mnKord és az mnArpee presetkönyvtárát.</p></details>
+        <details><summary>Miért nem szól?</summary><p>Az mnKarp MIDI-effekt: tegyél utána egy szintit vagy samplert ugyanarra a hangszersávra.</p></details>
+        <details><summary>Automatizálható az arpeggiátor?</summary><p>Igen. Az mnArpee rate, octave, gate, swing, steps, latch, group és cut értéke és a két kapcsoló host-paraméter.</p></details>
+        <details><summary>Hogyan kerül a végeredmény MIDI-ként a DAW-ba?</summary><p>Játssz, aztán húzd a <strong>Drag MIDI</strong> gombot egy sávra. A klip az első hang ütemének elején kezdődik, és a tempót is viszi. Kattintásra fájlba menti.</p></details>
+        <details><summary>Fut macOS-en vagy Linuxon?</summary><p>Még nem: az mnKarp Windowsra készül (64 bites VST3).</p></details>
+      </div>
+    </section>
+    <section id="get" aria-labelledby="getit">
+      <h2 id="getit" class="display">Az mnKarp letöltése</h2>
+      <p class="sub">Ingyenes, regisztráció és másolásvédelem nélkül.</p>
+      <div class="get">
+        <div class="box"><h3>Windows</h3><ol>
+          <li>Töltsd le az <strong>mnKarp-1.0.0-win-x64-setup.exe</strong> fájlt a legutóbbi kiadásból.</li>
+          <li>Futtasd. A plugin a szabványos VST3 mappába kerül.</li>
+          <li>A DAW-ban tedd az mnKarpot egy hangszersávra, a szinti elé.</li>
+        </ol><a class="btn primary" href="https://github.com/miklosnemeth/mnkarp/releases/latest">A telepítő letöltése</a></div>
+        <div class="box"><h3>Dokumentáció és forráskód</h3><ul>
+          <li><a href="../mnKarp-Felhasznaloi-utmutato.pdf">Felhasználói útmutató (PDF)</a></li>
+          <li><a href="https://github.com/miklosnemeth/mnkarp">Forráskód a GitHubon</a></li>
+          <li><a href="https://github.com/miklosnemeth/mnkarp/blob/master/CHANGELOG.md">Változások</a></li>
+          <li><a href="https://miklosnemeth.github.io/mnkord/hu/">mnKord, az akkord plugin külön</a></li>
+          <li><a href="https://github.com/miklosnemeth/mnArpee">mnArpee, az arpeggiátor külön</a></li>
+        </ul><p>Egyelőre csak Windowsra.</p></div>
+      </div>
+    </section>
+  </main>
+</div>
+<footer class="author">
+  <div class="wrap">
+    <div class="tag"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 8-5 4 5 4M16 8l5 4-5 4M14 5l-4 14"/></svg>Vibecoder</div>
+    <p class="name display">Németh <span>Miklós</span></p>
+    <p>Az mnKarp, az mnKord és az mnArpee Magyarországon készül, szabad szoftverként.</p>
+    <p class="legal">© 2026 Németh Miklós · <a href="https://github.com/miklosnemeth/mnkarp/blob/master/LICENSE">AGPL-3.0</a> · JUCE-szal készült</p>
+  </div>
+</footer>
+</body>
+</html>

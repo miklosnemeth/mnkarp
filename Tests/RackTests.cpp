@@ -360,6 +360,89 @@ int main(int argc, char** argv)
         folder.deleteRecursively();
     }
 
+    {
+        // Unsaved changes of a rack preset.
+        const auto folder = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("mnKarpTestDirty");
+        folder.deleteRecursively();
+        MnKarpAudioProcessor::overridePresetFolder(folder);
+
+        auto rack = makeRack();
+        check(! rack->isPresetDirty(), "dirty: no preset, nothing to save");
+        rack->savePreset("Dirty test");
+        check(! rack->isPresetDirty(), "dirty: not after saving");
+        setStage(*rack, MnKarpAudioProcessor::arpeeStage, false);
+        check(rack->isPresetDirty(), "dirty: a switch changed");
+        rack->savePreset("Dirty test");
+        check(! rack->isPresetDirty(), "dirty: saved again");
+        rack->setZoom(0.6f);
+        check(! rack->isPresetDirty(), "dirty: the size is not a change of the preset");
+        rack->getArpee().getApvts().getParameter("gate")->setValueNotifyingHost(0.1f);
+        check(rack->isPresetDirty(), "dirty: an mnArpee value changed");
+        rack->loadPreset("Dirty test");
+        check(! rack->isPresetDirty(), "dirty: not after loading");
+
+        juce::MemoryBlock state;
+        rack->getStateInformation(state);
+        MnKarpAudioProcessor other;
+        other.setStateInformation(state.getData(), (int) state.getSize());
+        check(other.getPresetName() == "Dirty test" && ! other.isPresetDirty(), "dirty: a project with the saved preset");
+        setStage(other, MnKarpAudioProcessor::kordStage, false);
+        juce::MemoryBlock edited;
+        other.getStateInformation(edited);
+        MnKarpAudioProcessor third;
+        third.setStateInformation(edited.getData(), (int) edited.getSize());
+        check(third.isPresetDirty(), "dirty: a project with edits after the save shows them as unsaved");
+
+        MnKarpAudioProcessor::overridePresetFolder({});
+        folder.deleteRecursively();
+    }
+
+    {
+        // The take: the last stretch of playing, as a MIDI file.
+        auto rack = makeRack();
+        setStage(*rack, MnKarpAudioProcessor::arpeeStage, false);
+        rack->clearRecording();
+        rack->collectRecording();
+        check(! rack->hasTake(), "take: nothing played, nothing to drag");
+
+        const auto noteOff = [] { juce::MidiBuffer m; m.addEvent(juce::MidiMessage::noteOff(1, 60), 0); return m; };
+        run(*rack, 10, noteOn(60));
+        run(*rack, 1, noteOff());
+        const int silentBlocks = (int) (3.0 * sampleRate / blockSize);   // longer than the 2 s gap
+        run(*rack, silentBlocks);
+        run(*rack, 20, noteOn(60));
+        run(*rack, 1, noteOff());
+        rack->collectRecording();
+        check(rack->hasTake(), "take: there is one after playing");
+
+        const auto file = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("mnKarpTestTake.mid");
+        check(rack->writeTake(file), "take: written as a MIDI file");
+
+        juce::MidiFile midiFile;
+        juce::FileInputStream stream(file);
+        check(stream.openedOk() && midiFile.readFrom(stream) && midiFile.getNumTracks() == 1, "take: the file reads back");
+        if (midiFile.getNumTracks() == 1)
+        {
+            std::multiset<int> ons;
+            double firstOn = -1.0, tempo = 0.0;
+            for (const auto* holder : *midiFile.getTrack(0))
+            {
+                if (holder->message.isNoteOn())
+                {
+                    ons.insert(holder->message.getNoteNumber());
+                    if (firstOn < 0.0)
+                        firstOn = holder->message.getTimeStamp();
+                }
+                if (holder->message.isTempoMetaEvent())
+                    tempo = holder->message.getTempoSecondsPerQuarterNote();
+            }
+            check(ons == std::multiset<int> { 60, 64, 67 }, "take: only the last phrase (the chord once)");
+            check(firstOn == 0.0, "take: it starts with its first note");
+            check(std::abs(tempo - 0.5) < 1.0e-3, "take: the tempo is in the file (120 BPM without a host)");
+        }
+        file.deleteFile();
+    }
+
     std::printf("%d failures\n", failures);
     return failures == 0 ? 0 : 1;
 }

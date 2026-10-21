@@ -31,7 +31,7 @@ the next device, a synth or a sampler. It makes no sound itself.
 
 From top to bottom:
 
-- **The top bar.** The title and the version, the rack presets in the middle, and the size button at the right.
+- **The top bar.** The title and the version, the rack presets in the middle, then **Drag MIDI** and the size button at the right.
 - **The mnKord section.** A strip with the power switch, the name and the fold arrow, and under it mnKord's window.
 - **The note line.** The notes that mnKord gives to mnArpee, live: when you press a key you see the chord here. It is a quick way to
   hear with your eyes what the first stage does.
@@ -73,9 +73,13 @@ A rack preset holds the **current presets of mnKord and mnArpee** and the **two 
 In the top bar:
 
 - the arrows step to the previous and the next preset;
-- the name opens the menu: the list of the presets (the current one is ticked), **Save**, **Save as...**, **Delete** and
-  **Show the preset folder**;
+- the name opens the menu: the list of the presets (the current one is ticked), **Save**, **Save as...**, **Revert to saved**,
+  **Delete...** and **Show the preset folder**;
 - **Save** writes the current preset; when the project has none yet, it asks for a name. A name that is taken asks before it replaces it.
+
+A green dot at the left of the name means the rack has changed since the preset was loaded or saved (a switch, or a preset or a value in
+one of the two plugins; the size does not count). Choosing another preset then asks first: **Save**, **Discard** or **Cancel**. The
+questions open inside the plugin window.
 
 The presets are files (`.mnkarp`) in `Documents\MNAudio\mnKarp\Presets`, shared by every project and every instance of mnKarp. Copy
 them to another computer to take them with you. A rack preset stores the *content* of the two presets, so it plays the same even
@@ -91,6 +95,18 @@ A project saved with mnKarp keeps the full state of both stages, whether or not 
 | Rack presets | `Documents\MNAudio\mnKarp\Presets` |
 | mnKord presets | `Documents\MNAudio\mnKord` (the same as mnKord's own) |
 | mnArpee presets | `Documents\MNAudio\mnArpee` (the same as mnArpee's own) |
+
+## Drag MIDI: the result as a clip
+
+mnKarp keeps what it has sent out in the last 10 minutes. **Drag MIDI** in the top bar hands the **last take** to the DAW: drag the button
+onto a track (or the arranger) and the notes land there as a MIDI clip. Click it instead to save the take as a `.mid` file.
+
+- The take is the latest stretch of playing: it starts with the first note after at least 2 seconds in which nothing sounded (or where
+  the DAW's loop jumped back) and runs to the last note.
+- While the DAW's transport runs, the clip starts on the bar of its first note, so it lands in time when you drop it on that bar. Without
+  the transport it starts with its first note.
+- The tempo it was played at is in the file; 960 ticks per quarter note.
+- The button is grey while there is nothing to drag.
 
 ## In the DAW: automation and the program list
 

@@ -23,7 +23,8 @@
 // state of each of the two processors.
 //==============================================================================
 class MnKarpAudioProcessor : public juce::AudioProcessor,
-                             private juce::AsyncUpdater
+                             private juce::AsyncUpdater,
+                             private juce::Timer
 {
 public:
     enum Stage { kordStage = 0, arpeeStage = 1 };
@@ -94,6 +95,8 @@ public:
     bool savePreset(const juce::String& name);
     bool loadPreset(const juce::String& name);
     bool deletePreset(const juce::String& name);
+    // Whether the current state differs from the rack preset as it was loaded or saved (false without a preset).
+    bool isPresetDirty();
 
     // The notes sounding after a stage (0 = after mnKord, 1 = after mnArpee), for the editor's display:
     // bit n of the 128-bit set is note n.
@@ -104,13 +107,38 @@ public:
     };
     NoteBits getNotesAfter(Stage stage) const;
 
+    // The take: the rack's MIDI output, to drag into the DAW as a clip. The audio thread queues every note,
+    // controller and pitch bend the rack gives out, the message thread keeps the last 10 minutes of them. The take
+    // is the latest stretch of playing: it starts with the first note after 2 seconds in which no note sounded
+    // (or where the host's transport jumped back, at a loop), and goes on to the last event.
+    struct RecordedEvent
+    {
+        double seconds = 0.0;   // since the rack started playing
+        double beat = 0.0;      // the host's position in quarter notes while its transport runs, else a free count
+        double bpm = 120.0;
+        bool hostBeat = false;  // beat is the host's position (the take can then start on a bar)
+        std::uint8_t bytes[3] {};
+        std::uint8_t size = 0;
+    };
+    static constexpr double takeGapSeconds = 2.0;
+    static constexpr double keptSeconds = 600.0;
+    // Moves what the audio thread recorded into the history (message thread; a timer does it ten times a second).
+    void collectRecording();
+    std::vector<RecordedEvent> getTake() const;
+    bool hasTake() const;
+    // Writes the take as a standard MIDI file (960 ticks per quarter note, with the tempo it was played at).
+    bool writeTake(const juce::File& file) const;
+    void clearRecording();
+
     // Folding a stage hides its editor (the rack gets shorter); it does not change the sound.
     bool isStageFolded(Stage stage) const { return folded[(size_t) stage].load(); }
     void setStageFolded(Stage stage, bool shouldBeFolded) { folded[(size_t) stage].store(shouldBeFolded); }
 
 private:
     void handleAsyncUpdate() override;
+    void timerCallback() override { collectRecording(); }
     void notifyHostProgramsChanged();
+    void record(const juce::MidiBuffer& midi, int numSamples);
 
     // Runs one stage on the block, or passes the MIDI through when it is off.
     template <typename Processor>
@@ -121,6 +149,9 @@ private:
     void applyStateXml(const juce::XmlElement& root, bool fromPreset);
     static juce::File presetFile(const juce::String& name);
     void trackNotes(Stage stage, const juce::MidiBuffer& midi);
+    // The state a rack preset holds, as text (with mnArpee's zoom left out, which is the rack's size).
+    juce::String presetSnapshot();
+    std::unique_ptr<juce::XmlElement> createPresetXml();
 
     MnKordAudioProcessor kord;
     MnArpeeAudioProcessor arpee;
@@ -132,6 +163,7 @@ private:
     std::atomic<int> windowWidth { defaultWidth };
 
     juce::String presetName;
+    juce::String savedSnapshot;   // presetSnapshot() when the preset was loaded or saved
     juce::CriticalSection programLock;
     juce::StringArray programNames;           // the rack presets, as the host's programs
     std::atomic<int> pendingProgram { -1 };
@@ -142,6 +174,14 @@ private:
     // The notes after each stage: kept by the audio thread, published for the editor.
     std::array<NoteBits, numStages> tracked {};
     std::array<std::array<std::atomic<std::uint64_t>, 2>, numStages> published {};
+
+    // The take. The fifo is written by the audio thread only, read by the message thread only.
+    static constexpr int recordCapacity = 8192;
+    juce::AbstractFifo recordFifo { recordCapacity };
+    std::vector<RecordedEvent> recordBuffer = std::vector<RecordedEvent>(recordCapacity);
+    std::vector<RecordedEvent> history;   // message thread
+    double recordSeconds = 0.0;           // audio thread: the clock of the recording
+    double freeBeat = 0.0;
 
     // Audio thread.
     std::array<bool, numStages> wasOn { true, true };

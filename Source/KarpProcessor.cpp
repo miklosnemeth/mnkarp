@@ -34,10 +34,12 @@ MnKarpAudioProcessor::MnKarpAudioProcessor()
         }
 
     refreshProgramList();
+    startTimerHz(10);
 }
 
 MnKarpAudioProcessor::~MnKarpAudioProcessor()
 {
+    stopTimer();
     cancelPendingUpdate();
 
     // The mirrors outlive the members below (the processor base class owns them): let go of mnArpee first.
@@ -105,6 +107,7 @@ void MnKarpAudioProcessor::processBlock(juce::AudioBuffer<float>& audio, juce::M
     trackNotes(kordStage, midi);
     runStage(arpeeStage, arpee, audio, midi);
     trackNotes(arpeeStage, midi);
+    record(midi, audio.getNumSamples());
 }
 
 void MnKarpAudioProcessor::setZoom(float factor)
@@ -184,6 +187,11 @@ void MnKarpAudioProcessor::applyStateXml(const juce::XmlElement& root, bool from
         setZoom((float) root.getDoubleAttribute("zoom", defaultZoom));
         setWidth(root.getIntAttribute("width", defaultWidth));
         presetName = root.getStringAttribute("preset");
+        // The project may hold edits made after the preset was saved: compare with the file as it is.
+        savedSnapshot = {};
+        if (presetName.isNotEmpty())
+            if (const auto saved = juce::XmlDocument::parse(presetFile(presetName)))
+                savedSnapshot = saved->toString();
     }
     else
     {
@@ -255,10 +263,11 @@ bool MnKarpAudioProcessor::savePreset(const juce::String& name)
     if (! file.getParentDirectory().createDirectory().wasOk())
         return false;
 
-    if (! createStateXml(true)->writeTo(file))
+    if (! createPresetXml()->writeTo(file))
         return false;
 
     presetName = file.getFileNameWithoutExtension();
+    savedSnapshot = presetSnapshot();
     refreshProgramList();
     return true;
 }
@@ -272,7 +281,28 @@ bool MnKarpAudioProcessor::loadPreset(const juce::String& name)
 
     applyStateXml(*root, true);
     presetName = file.getFileNameWithoutExtension();
+    savedSnapshot = presetSnapshot();
     return true;
+}
+
+juce::String MnKarpAudioProcessor::presetSnapshot()
+{
+    // mnArpee keeps its zoom in its state; the rack sets it, so it must not count as a change.
+    return createPresetXml()->toString();
+}
+
+std::unique_ptr<juce::XmlElement> MnKarpAudioProcessor::createPresetXml()
+{
+    const float rackZoom = arpee.getZoom();
+    arpee.setZoom(1.0f);
+    auto xml = createStateXml(true);
+    arpee.setZoom(rackZoom);
+    return xml;
+}
+
+bool MnKarpAudioProcessor::isPresetDirty()
+{
+    return presetName.isNotEmpty() && presetSnapshot() != savedSnapshot;
 }
 
 bool MnKarpAudioProcessor::deletePreset(const juce::String& name)
@@ -409,6 +439,178 @@ MnKarpAudioProcessor::NoteBits MnKarpAudioProcessor::getNotesAfter(Stage stage) 
 {
     return { published[(size_t) stage][0].load(std::memory_order_relaxed),
              published[(size_t) stage][1].load(std::memory_order_relaxed) };
+}
+
+//==============================================================================
+void MnKarpAudioProcessor::record(const juce::MidiBuffer& midi, int numSamples)
+{
+    const double sampleRate = getSampleRate() > 0.0 ? getSampleRate() : 44100.0;
+    double bpm = 120.0, beat = freeBeat;
+    bool hostBeat = false;
+    if (auto* playHead = getPlayHead())
+        if (const auto position = playHead->getPosition())
+        {
+            bpm = position->getBpm().orFallback(120.0);
+            if (position->getIsPlaying())
+                if (const auto ppq = position->getPpqPosition())
+                {
+                    beat = *ppq;
+                    hostBeat = true;
+                }
+        }
+    if (bpm <= 0.0)
+        bpm = 120.0;
+
+    const double beatsPerSample = bpm / (60.0 * sampleRate);
+    for (const auto meta : midi)
+    {
+        const auto message = meta.getMessage();
+        if (! (message.isNoteOnOrOff() || message.isController() || message.isPitchWheel()
+               || message.isChannelPressure() || message.isAftertouch())
+            || message.getRawDataSize() > 3)
+            continue;
+
+        const auto scope = recordFifo.write(1);
+        if (scope.blockSize1 + scope.blockSize2 == 0)
+            break;   // the message thread is not collecting (the fifo is full): this block is lost
+
+        auto& event = recordBuffer[(size_t) (scope.blockSize1 > 0 ? scope.startIndex1 : scope.startIndex2)];
+        event.seconds = recordSeconds + meta.samplePosition / sampleRate;
+        event.beat = beat + meta.samplePosition * beatsPerSample;
+        event.bpm = bpm;
+        event.hostBeat = hostBeat;
+        event.size = (std::uint8_t) message.getRawDataSize();
+        std::copy_n(message.getRawData(), event.size, event.bytes);
+    }
+
+    recordSeconds += numSamples / sampleRate;
+    freeBeat = (hostBeat ? beat : freeBeat) + numSamples * beatsPerSample;
+}
+
+void MnKarpAudioProcessor::collectRecording()
+{
+    const auto scope = recordFifo.read(recordFifo.getNumReady());
+    for (int i = 0; i < scope.blockSize1; ++i)
+        history.push_back(recordBuffer[(size_t) (scope.startIndex1 + i)]);
+    for (int i = 0; i < scope.blockSize2; ++i)
+        history.push_back(recordBuffer[(size_t) (scope.startIndex2 + i)]);
+
+    if (! history.empty())
+    {
+        const double oldest = history.back().seconds - keptSeconds;
+        const auto keep = std::find_if(history.begin(), history.end(),
+                                       [oldest](const RecordedEvent& e) { return e.seconds >= oldest; });
+        history.erase(history.begin(), keep);
+    }
+}
+
+void MnKarpAudioProcessor::clearRecording()
+{
+    collectRecording();
+    history.clear();
+}
+
+std::vector<MnKarpAudioProcessor::RecordedEvent> MnKarpAudioProcessor::getTake() const
+{
+    size_t start = 0;
+    std::array<bool, 16 * 128> held {};
+    int numHeld = 0;
+    double silentSince = -1.0e9;
+
+    for (size_t i = 0; i < history.size(); ++i)
+    {
+        const auto& event = history[i];
+        const auto message = juce::MidiMessage(event.bytes, event.size);
+
+        // A loop of the host's transport: what came before belongs to another take.
+        if (i > 0 && event.hostBeat && history[i - 1].hostBeat && event.beat < history[i - 1].beat - 1.0e-6)
+            start = i;
+
+        if (message.isNoteOn())
+        {
+            if (numHeld == 0 && event.seconds - silentSince >= takeGapSeconds)
+                start = i;
+
+            auto& on = held[(size_t) ((message.getChannel() - 1) * 128 + message.getNoteNumber())];
+            if (! on)
+            {
+                on = true;
+                ++numHeld;
+            }
+        }
+        else if (message.isNoteOff())
+        {
+            auto& on = held[(size_t) ((message.getChannel() - 1) * 128 + message.getNoteNumber())];
+            if (on)
+            {
+                on = false;
+                if (--numHeld == 0)
+                    silentSince = event.seconds;
+            }
+        }
+        else if (message.isAllNotesOff() || message.isAllSoundOff())
+        {
+            held = {};
+            if (numHeld > 0)
+                silentSince = event.seconds;
+            numHeld = 0;
+        }
+    }
+
+    std::vector<RecordedEvent> take(history.begin() + (std::ptrdiff_t) start, history.end());
+    // The controllers sent before the first note (a sustain pedal held from earlier, say) are not part of it.
+    while (! take.empty() && ! juce::MidiMessage(take.front().bytes, take.front().size).isNoteOn())
+        take.erase(take.begin());
+    return take;
+}
+
+bool MnKarpAudioProcessor::hasTake() const
+{
+    return ! getTake().empty();
+}
+
+bool MnKarpAudioProcessor::writeTake(const juce::File& file) const
+{
+    const auto take = getTake();
+    if (take.empty())
+        return false;
+
+    constexpr int ticksPerQuarter = 960;
+    // On the host's timeline the clip starts on the bar of its first note (4/4), so it lands in place.
+    const double origin = take.front().hostBeat ? std::floor(take.front().beat / 4.0) * 4.0 : take.front().beat;
+
+    juce::MidiMessageSequence sequence;
+    sequence.addEvent(juce::MidiMessage::textMetaEvent(3, "mnKarp"), 0.0);
+    sequence.addEvent(juce::MidiMessage::tempoMetaEvent(juce::roundToInt(60000000.0 / take.front().bpm)), 0.0);
+    sequence.addEvent(juce::MidiMessage::timeSignatureMetaEvent(4, 4), 0.0);
+
+    double last = 0.0;
+    std::array<bool, 16 * 128> held {};
+    for (const auto& event : take)
+    {
+        const auto message = juce::MidiMessage(event.bytes, event.size);
+        const double ticks = juce::jmax(0.0, (event.beat - origin) * ticksPerQuarter);
+        sequence.addEvent(message, ticks);
+        last = juce::jmax(last, ticks);
+        if (message.isNoteOnOrOff())
+            held[(size_t) ((message.getChannel() - 1) * 128 + message.getNoteNumber())] = message.isNoteOn();
+    }
+
+    // Notes still sounding at the end are ended a sixteenth after the last event.
+    for (int i = 0; i < (int) held.size(); ++i)
+        if (held[(size_t) i])
+            sequence.addEvent(juce::MidiMessage::noteOff(i / 128 + 1, i % 128), last + ticksPerQuarter / 4);
+
+    sequence.sort();
+    sequence.updateMatchedPairs();
+
+    juce::MidiFile midiFile;
+    midiFile.setTicksPerQuarterNote(ticksPerQuarter);
+    midiFile.addTrack(sequence);
+
+    file.deleteFile();
+    juce::FileOutputStream stream(file);
+    return stream.openedOk() && midiFile.writeTo(stream, 1);
 }
 
 //==============================================================================

@@ -30,5 +30,7 @@ build/Release/mnKarpTests.exe        # must end with 0 failures
   behaviour changes. The screenshot `docs/images/main.png` is made by `build/Release/mnKarpTests.exe --screenshot docs/images/main.png`.
 - The PDFs (`docs/mnKarp-User-Guide.pdf`, `docs/mnKarp-Felhasznaloi-utmutato.pdf`) go into the installer: run `python docs/build-pdf.py`
   after changing a guide (it uses mnKord's converter and needs Edge or Chrome) and commit them.
+- The web pages `docs/index.html`, `docs/hu/index.html` and `docs/sitemap.xml` are generated: edit `site/build-site.py` and run
+  `python site/build-site.py` (it reads the version from `CMakeLists.txt` and the stylesheet from mnKord's `site/site.css`).
 - The installer (`installer/mnKarp.iss`) is built by the normal Release build when Inno Setup 6 is installed; it includes mnKord's
   `installer/MnAudioInstaller.iss`.

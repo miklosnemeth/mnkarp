@@ -248,6 +248,81 @@ void MnKarpAudioProcessorEditor::FlowBar::paint(juce::Graphics& g)
 }
 
 //==============================================================================
+void MnKarpAudioProcessorEditor::TakeButton::paint(juce::Graphics& g)
+{
+    const auto r = getLocalBounds().toFloat();
+    const bool over = isMouseOver(true) && available;
+    g.setColour(over ? Palette::cardHi().brighter(0.08f) : Palette::cardHi());
+    g.fillRoundedRectangle(r, 7.0f);
+
+    const auto colour = available ? Palette::accent() : Palette::dimText().withAlpha(0.4f);
+    auto area = getLocalBounds().reduced(10, 0);
+    const auto icon = area.removeFromLeft(14).toFloat().withSizeKeepingCentre(12.0f, 14.0f);
+
+    // A small clip with a down arrow: "take it with you".
+    g.setColour(colour);
+    g.drawLine(icon.getCentreX(), icon.getY(), icon.getCentreX(), icon.getBottom() - 4.0f, 2.0f);
+    juce::Path head;
+    head.addTriangle(icon.getX(), icon.getBottom() - 6.0f, icon.getRight(), icon.getBottom() - 6.0f,
+                     icon.getCentreX(), icon.getBottom());
+    g.fillPath(head);
+
+    area.removeFromLeft(6);
+    g.setFont(textFont(15.0f));
+    g.drawText("Drag MIDI", area, juce::Justification::centredLeft);
+}
+
+void MnKarpAudioProcessorEditor::TakeButton::mouseDrag(const juce::MouseEvent& e)
+{
+    if (! dragged && available && e.getDistanceFromDragStart() > 4)
+    {
+        dragged = true;
+        owner.dragTake();
+    }
+}
+
+void MnKarpAudioProcessorEditor::TakeButton::mouseUp(const juce::MouseEvent& e)
+{
+    if (! dragged && available && ! e.mouseWasDraggedSinceMouseDown())
+        owner.saveTake();
+    dragged = false;
+}
+
+void MnKarpAudioProcessorEditor::dragTake()
+{
+    // A file of its own for every drag: the DAW may still be reading the previous one.
+    const auto folder = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("mnKarp takes");
+    folder.createDirectory();
+    for (const auto& old : folder.findChildFiles(juce::File::findFiles, false, "*.mid"))
+        if (old.getLastModificationTime() < juce::Time::getCurrentTime() - juce::RelativeTime::hours(1))
+            old.deleteFile();
+
+    rack.collectRecording();
+    const auto file = folder.getNonexistentChildFile(
+        "mnKarp take " + juce::Time::getCurrentTime().formatted("%H-%M-%S"), ".mid", false);
+    if (rack.writeTake(file))
+        juce::DragAndDropContainer::performExternalDragDropOfFiles({ file.getFullPathName() }, false, &takeButton);
+}
+
+void MnKarpAudioProcessorEditor::saveTake()
+{
+    rack.collectRecording();
+    const auto start = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("mnKarp take.mid");
+    fileChooser = std::make_unique<juce::FileChooser>("Save the take as a MIDI file", start, "*.mid");
+    fileChooser->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles
+                                 | juce::FileBrowserComponent::warnAboutOverwriting,
+                             [safe = juce::Component::SafePointer<MnKarpAudioProcessorEditor>(this)](const juce::FileChooser& chooser)
+                             {
+                                 const auto file = chooser.getResult();
+                                 if (safe == nullptr || file == juce::File())
+                                     return;
+                                 if (! safe->rack.writeTake(file.withFileExtension("mid")))
+                                     safe->showDialog("Save failed", "The MIDI file could not be written.", false, {},
+                                                      { "OK" }, 0, 0, nullptr);
+                             });
+}
+
+//==============================================================================
 MnKarpAudioProcessorEditor::Section::Section(MnKarpAudioProcessorEditor& ownerRef, MnKarpAudioProcessor& processor,
                                              MnKarpAudioProcessor::Stage stageIn, juce::AudioProcessor& child,
                                              const juce::String& roleIn)
@@ -402,12 +477,13 @@ MnKarpAudioProcessorEditor::MnKarpAudioProcessorEditor(MnKarpAudioProcessor& pro
     presetButton.setTooltip("The rack presets: the presets of mnKord and mnArpee together with the two switches");
     saveButton.setButtonText("Save");
     saveButton.onClick = [this] { saveClicked(); };
+    takeButton.setTooltip("Drag the last thing you played into the DAW as a MIDI clip, or click to save it as a file");
     zoomButton.setTooltip("The size of both windows");
     zoomButton.onClick = [this] { showZoomMenu(); };
     zoomButton.setButtonText(juce::String(juce::roundToInt(rack.getZoom() * 100.0f)) + "%");
 
     for (auto* component : std::initializer_list<juce::Component*> { &prevPresetButton, &nextPresetButton, &presetButton,
-                                                                      &saveButton, &zoomButton, sections[0].get(),
+                                                                      &saveButton, &takeButton, &zoomButton, sections[0].get(),
                                                                       &flowBar, sections[1].get() })
         addAndMakeVisible(component);
 
@@ -444,11 +520,22 @@ void MnKarpAudioProcessorEditor::paint(juce::Graphics& g)
     g.drawText("v" MNKARP_VERSION_STRING, brand.removeFromLeft(60), juce::Justification::centredLeft);
 }
 
+void MnKarpAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
+{
+    if (shownDirty)
+        mnaudio::ui::paintDirtyDot(g, presetButton.getBounds());
+}
+
 void MnKarpAudioProcessorEditor::resized()
 {
+    if (dialog != nullptr)
+        dialog->setBounds(getLocalBounds());
+
     auto bar = getLocalBounds().reduced(margin, 0).removeFromTop(margin + barHeight).withTrimmedTop(margin);
     brandArea = bar.removeFromLeft(190);
     zoomButton.setBounds(bar.removeFromRight(58).withSizeKeepingCentre(58, 28));
+    bar.removeFromRight(8);
+    takeButton.setBounds(bar.removeFromRight(104).withSizeKeepingCentre(104, 28));
 
     // The preset picker, in the middle of what is left: [<] [name] [>] [Save]
     constexpr int arrowWidth = 26, nameWidth = 240, saveWidth = 56;
@@ -504,6 +591,23 @@ void MnKarpAudioProcessorEditor::timerCallback()
 
     if (rack.getPresetName() != shownPreset)
         refreshPresetButton();
+
+    // Comparing the whole state is not free: twice a second is enough for the dot.
+    if (++dirtyTick >= 8)
+    {
+        dirtyTick = 0;
+        if (rack.hasTake() != takeButton.available)
+        {
+            takeButton.available = ! takeButton.available;
+            takeButton.repaint();
+        }
+
+        if (rack.isPresetDirty() != shownDirty)
+        {
+            shownDirty = ! shownDirty;
+            repaint(presetButton.getBounds().expanded(2));
+        }
+    }
 }
 
 void MnKarpAudioProcessorEditor::syncWidths()
@@ -594,7 +698,196 @@ void MnKarpAudioProcessorEditor::updateSize()
 void MnKarpAudioProcessorEditor::refreshPresetButton()
 {
     shownPreset = rack.getPresetName();
+    shownDirty = rack.isPresetDirty();
+    repaint(presetButton.getBounds().expanded(2));
     presetButton.setButtonText(shownPreset.isEmpty() ? juce::String("(no rack preset)") : shownPreset);
+}
+
+//==============================================================================
+MnKarpAudioProcessorEditor::Dialog::Dialog(const juce::String& titleIn, const juce::String& messageIn, bool withField,
+                                           const juce::String& initialText, const juce::StringArray& buttonNames,
+                                           int defaultButtonIn, int cancelButtonIn,
+                                           std::function<void(int, juce::String)> doneIn)
+    : title(titleIn), message(messageIn), defaultButton(defaultButtonIn), cancelButton(cancelButtonIn),
+      done(std::move(doneIn))
+{
+    setWantsKeyboardFocus(true);
+
+    if (withField)
+    {
+        field = std::make_unique<juce::TextEditor>();
+        field->setText(initialText, false);
+        field->setFont(textFont(16.0f));
+        field->setIndents(10, 7);
+        field->setColour(juce::TextEditor::backgroundColourId, Palette::bg());
+        field->setColour(juce::TextEditor::textColourId, Palette::text());
+        field->setColour(juce::TextEditor::highlightColourId, Palette::accent().withAlpha(0.35f));
+        field->setColour(juce::TextEditor::outlineColourId, Palette::border());
+        field->setColour(juce::TextEditor::focusedOutlineColourId, Palette::accent());
+        field->setColour(juce::CaretComponent::caretColourId, Palette::accent());
+        field->onReturnKey = [this] { finish(defaultButton); };
+        field->onEscapeKey = [this] { finish(cancelButton); };
+        addAndMakeVisible(*field);
+    }
+
+    for (int i = 0; i < buttonNames.size(); ++i)
+    {
+        auto* button = buttons.add(new juce::TextButton(buttonNames[i]));
+        if (i == defaultButton)
+        {
+            button->setColour(juce::TextButton::buttonColourId, Palette::accent());
+            button->setColour(juce::TextButton::textColourOffId, Palette::bg());
+        }
+        button->onClick = [this, i] { finish(i); };
+        addAndMakeVisible(button);
+    }
+}
+
+void MnKarpAudioProcessorEditor::Dialog::focusFirst()
+{
+    if (field != nullptr)
+    {
+        field->grabKeyboardFocus();
+        field->selectAll();
+    }
+    else
+    {
+        grabKeyboardFocus();
+    }
+}
+
+void MnKarpAudioProcessorEditor::Dialog::finish(int button)
+{
+    if (finished)
+        return;
+    finished = true;
+
+    // The dialog (and the button that was clicked) goes away after this call has returned.
+    auto callback = std::move(done);
+    const auto text = field != nullptr ? field->getText().trim() : juce::String();
+    if (onClose != nullptr)
+        onClose();
+    juce::MessageManager::callAsync([callback, button, text] { if (callback != nullptr) callback(button, text); });
+}
+
+juce::Rectangle<int> MnKarpAudioProcessorEditor::Dialog::cardBounds() const
+{
+    const int height = 64 + 40 + (field != nullptr ? 44 : 0) + 52;
+    return getLocalBounds().withSizeKeepingCentre(juce::jmin(420, getWidth() - 40), height);
+}
+
+void MnKarpAudioProcessorEditor::Dialog::paint(juce::Graphics& g)
+{
+    g.fillAll(Palette::bg().withAlpha(0.72f));
+
+    const auto card = cardBounds();
+    mnaudio::ui::paintCard(g, card);
+
+    auto area = card.reduced(20, 16);
+    g.setColour(Palette::accent());
+    g.setFont(titleFont(18.0f));
+    g.drawText(title, area.removeFromTop(28), juce::Justification::centredLeft);
+
+    g.setColour(Palette::text());
+    g.setFont(textFont(15.0f));
+    g.drawFittedText(message, area.removeFromTop(40), juce::Justification::centredLeft, 2);
+}
+
+void MnKarpAudioProcessorEditor::Dialog::resized()
+{
+    auto area = cardBounds().reduced(20, 16);
+    area.removeFromTop(28 + 40);
+    if (field != nullptr)
+        field->setBounds(area.removeFromTop(34));
+
+    auto row = area.removeFromBottom(32);
+    for (int i = buttons.size(); --i >= 0;)
+    {
+        buttons[i]->setBounds(row.removeFromRight(juce::jmax(80, buttons[i]->getBestWidthForHeight(32) + 16)));
+        row.removeFromRight(8);
+    }
+}
+
+bool MnKarpAudioProcessorEditor::Dialog::keyPressed(const juce::KeyPress& key)
+{
+    if (key == juce::KeyPress::returnKey)
+    {
+        finish(defaultButton);
+        return true;
+    }
+    if (key == juce::KeyPress::escapeKey)
+    {
+        finish(cancelButton);
+        return true;
+    }
+    return false;
+}
+
+void MnKarpAudioProcessorEditor::showDialog(const juce::String& title, const juce::String& message, bool withField,
+                                            const juce::String& initialText, const juce::StringArray& buttonNames,
+                                            int defaultButton, int cancelButton,
+                                            std::function<void(int, juce::String)> done)
+{
+    // Only one at a time: a new one answers the old one with its cancel button.
+    if (dialog != nullptr)
+        dialog->finish(dialog->getCancelButton());
+
+    dialog = std::make_unique<Dialog>(title, message, withField, initialText, buttonNames, defaultButton, cancelButton,
+                                      std::move(done));
+    dialog->onClose = [safe = juce::Component::SafePointer<MnKarpAudioProcessorEditor>(this)]
+    {
+        if (safe != nullptr && safe->dialog != nullptr)
+        {
+            safe->dialog->setVisible(false);
+            // Not deleted here: this runs inside the dialog's own button click.
+            juce::MessageManager::callAsync([safe]
+                                            {
+                                                if (safe != nullptr && safe->dialog != nullptr && ! safe->dialog->isVisible())
+                                                    safe->dialog.reset();
+                                            });
+        }
+    };
+    addAndMakeVisible(*dialog);
+    dialog->setBounds(getLocalBounds());
+    dialog->focusFirst();
+}
+
+//==============================================================================
+void MnKarpAudioProcessorEditor::confirmLeavePreset(std::function<void()> proceed)
+{
+    if (! rack.isPresetDirty())
+    {
+        proceed();
+        return;
+    }
+
+    const auto name = rack.getPresetName();
+    showDialog("Unsaved changes", "The rack preset \"" + name + "\" has changes that are not saved.", false, {},
+               { "Save", "Discard", "Cancel" }, 0, 2,
+               [safe = juce::Component::SafePointer<MnKarpAudioProcessorEditor>(this), name, proceed](int button, juce::String)
+               {
+                   if (safe == nullptr || button == 2)
+                       return;
+                   if (button == 0 && ! safe->rack.savePreset(name))
+                   {
+                       safe->showSaveFailed();
+                       return;
+                   }
+                   proceed();
+                   safe->refreshPresetButton();
+               });
+}
+
+void MnKarpAudioProcessorEditor::loadPresetChecked(const juce::String& name)
+{
+    confirmLeavePreset([safe = juce::Component::SafePointer<MnKarpAudioProcessorEditor>(this), name]
+                       {
+                           if (safe != nullptr)
+                           {
+                               safe->rack.loadPreset(name);
+                               safe->refreshPresetButton();
+                           }
+                       });
 }
 
 void MnKarpAudioProcessorEditor::stepPreset(int delta)
@@ -606,8 +899,7 @@ void MnKarpAudioProcessorEditor::stepPreset(int delta)
     const int current = names.indexOf(rack.getPresetName());
     const int next = current < 0 ? (delta > 0 ? 0 : names.size() - 1)
                                  : (current + delta + names.size()) % names.size();
-    rack.loadPreset(names[next]);
-    refreshPresetButton();
+    loadPresetChecked(names[next]);
 }
 
 void MnKarpAudioProcessorEditor::showPresetMenu()
@@ -626,7 +918,8 @@ void MnKarpAudioProcessorEditor::showPresetMenu()
     menu.addSeparator();
     menu.addItem(1, "Save", current.isNotEmpty());
     menu.addItem(2, "Save as...");
-    menu.addItem(3, "Delete", current.isNotEmpty() && names.contains(current));
+    menu.addItem(5, "Revert to saved", current.isNotEmpty() && rack.isPresetDirty());
+    menu.addItem(3, "Delete...", current.isNotEmpty() && names.contains(current));
     menu.addItem(4, "Show the preset folder");
 
     menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&presetButton),
@@ -636,25 +929,15 @@ void MnKarpAudioProcessorEditor::showPresetMenu()
                                return;
 
                            if (result >= 100)
-                           {
-                               safe->rack.loadPreset(names[result - 100]);
-                           }
+                               safe->loadPresetChecked(names[result - 100]);
                            else if (result == 1)
-                           {
                                safe->saveAs(current);
-                           }
                            else if (result == 2)
-                           {
-                               safe->promptName(current, [safe](juce::String name)
-                                                {
-                                                    if (safe != nullptr)
-                                                        safe->saveAs(name);
-                                                });
-                           }
+                               safe->promptName(current);
+                           else if (result == 5)
+                               safe->rack.loadPreset(current);
                            else if (result == 3)
-                           {
-                               safe->rack.deletePreset(current);
-                           }
+                               safe->deleteDialog(current);
                            else if (result == 4)
                            {
                                MnKarpAudioProcessor::getPresetFolder().createDirectory();
@@ -669,11 +952,7 @@ void MnKarpAudioProcessorEditor::saveClicked()
     if (rack.getPresetName().isNotEmpty())
         saveAs(rack.getPresetName());
     else
-        promptName({}, [safe = juce::Component::SafePointer<MnKarpAudioProcessorEditor>(this)](juce::String name)
-                   {
-                       if (safe != nullptr)
-                           safe->saveAs(name);
-                   });
+        promptName({});
 }
 
 void MnKarpAudioProcessorEditor::saveAs(const juce::String& name)
@@ -685,48 +964,49 @@ void MnKarpAudioProcessorEditor::saveAs(const juce::String& name)
     const auto names = MnKarpAudioProcessor::listPresets();
     if (name != rack.getPresetName() && names.contains(juce::File::createLegalFileName(name)))
     {
-        juce::AlertWindow::showAsync(
-            juce::MessageBoxOptions()
-                .withIconType(juce::MessageBoxIconType::QuestionIcon)
-                .withTitle("Replace the preset?")
-                .withMessage("A rack preset called \"" + name + "\" exists. Replace it?")
-                .withButton("Replace")
-                .withButton("Cancel")
-                .withAssociatedComponent(this),
-            [safe = juce::Component::SafePointer<MnKarpAudioProcessorEditor>(this), name](int result)
-            {
-                if (safe != nullptr && result == 1)
-                {
-                    safe->rack.savePreset(name);
-                    safe->refreshPresetButton();
-                }
-            });
+        showDialog("Replace the preset?", "A rack preset called \"" + name + "\" exists. Replace it?", false, {},
+                   { "Replace", "Cancel" }, 0, 1,
+                   [safe = juce::Component::SafePointer<MnKarpAudioProcessorEditor>(this), name](int button, juce::String)
+                   {
+                       if (safe == nullptr || button != 0)
+                           return;
+                       if (! safe->rack.savePreset(name))
+                           safe->showSaveFailed();
+                       safe->refreshPresetButton();
+                   });
         return;
     }
 
     if (! rack.savePreset(name))
-        juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, "Save failed",
-                                               "The preset could not be written to\n"
-                                                   + MnKarpAudioProcessor::getPresetFolder().getFullPathName(),
-                                               "OK", this);
+        showSaveFailed();
     refreshPresetButton();
 }
 
-void MnKarpAudioProcessorEditor::promptName(const juce::String& initial, std::function<void(juce::String)> done)
+void MnKarpAudioProcessorEditor::showSaveFailed()
 {
-    auto* window = new juce::AlertWindow("Save the rack preset", "The name of the preset:",
-                                         juce::MessageBoxIconType::NoIcon, this);
-    window->setLookAndFeel(&lookAndFeel);
-    window->addTextEditor("name", initial);
-    window->addButton("Save", 1, juce::KeyPress(juce::KeyPress::returnKey));
-    window->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
-    window->enterModalState(true,
-                            juce::ModalCallbackFunction::create(
-                                [window, done = std::move(done)](int result)
-                                {
-                                    window->setLookAndFeel(nullptr);
-                                    if (result == 1)
-                                        done(window->getTextEditorContents("name").trim());
-                                }),
-                            true);
+    showDialog("Save failed", "The preset could not be written to " + MnKarpAudioProcessor::getPresetFolder().getFullPathName(),
+               false, {}, { "OK" }, 0, 0, nullptr);
+}
+
+void MnKarpAudioProcessorEditor::deleteDialog(const juce::String& name)
+{
+    showDialog("Delete the preset?", "\"" + name + "\" goes to the recycle bin.", false, {}, { "Delete", "Cancel" }, 1, 1,
+               [safe = juce::Component::SafePointer<MnKarpAudioProcessorEditor>(this), name](int button, juce::String)
+               {
+                   if (safe != nullptr && button == 0)
+                   {
+                       safe->rack.deletePreset(name);
+                       safe->refreshPresetButton();
+                   }
+               });
+}
+
+void MnKarpAudioProcessorEditor::promptName(const juce::String& initial)
+{
+    showDialog("Save the rack preset", "The name of the preset:", true, initial, { "Save", "Cancel" }, 0, 1,
+               [safe = juce::Component::SafePointer<MnKarpAudioProcessorEditor>(this)](int button, juce::String name)
+               {
+                   if (safe != nullptr && button == 0 && name.isNotEmpty())
+                       safe->saveAs(name);
+               });
 }

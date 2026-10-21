@@ -31,7 +31,7 @@ eszköznek, egy szintinek vagy samplernek. Hangot nem ad.
 
 Fentről lefelé:
 
-- **A felső sáv.** A cím és a verzió, középen a rack presetek, jobbra a méret gomb.
+- **A felső sáv.** A cím és a verzió, középen a rack presetek, jobbra a **Drag MIDI** és a méret gomb.
 - **Az mnKord szekció.** Egy sáv a kapcsolóval, a névvel és az összecsukó nyíllal, alatta az mnKord ablaka.
 - **A hangsor.** Azok a hangok, amelyeket az mnKord átad az mnArpee-nak, élőben: billentyű lenyomásakor itt látod az akkordot. Gyorsan
   megmutatja, mit csinál az első fokozat.
@@ -73,8 +73,13 @@ Egy rack preset az **mnKord és az mnArpee jelenlegi presetjét** és a **két k
 A felső sávban:
 
 - a nyilak az előző és a következő presetre lépnek;
-- a név megnyitja a menüt: a presetek listája (a jelenlegi pipával), **Save**, **Save as...**, **Delete** és **Show the preset folder**;
+- a név megnyitja a menüt: a presetek listája (a jelenlegi pipával), **Save**, **Save as...**, **Revert to saved**, **Delete...** és
+  **Show the preset folder**;
 - a **Save** a jelenlegi presetet írja ki; ha a projektnek még nincs, nevet kér. Foglalt névnél rákérdez, mielőtt felülírná.
+
+A név bal oldalán lévő zöld pötty azt jelzi, hogy a rack változott a preset betöltése vagy mentése óta (egy kapcsoló, vagy a két plugin
+valamelyikének presetje vagy értéke; a méret nem számít). Ilyenkor másik preset választásakor előbb rákérdez: **Save**, **Discard** vagy
+**Cancel**. A kérdések a plugin ablakán belül jelennek meg.
 
 A presetek fájlok (`.mnkarp`) a `Documents\MNAudio\mnKarp\Presets` mappában, minden projekt és minden mnKarp példány közösen
 használja őket. Másik gépre másolással vihetők át. A rack preset a két preset *tartalmát* tárolja, ezért akkor is ugyanúgy szól, ha
@@ -90,6 +95,18 @@ Az mnKarppal mentett projekt mindkét fokozat teljes állapotát megtartja, aká
 | Rack presetek | `Documents\MNAudio\mnKarp\Presets` |
 | mnKord presetek | `Documents\MNAudio\mnKord` (ugyanaz, mint az mnKord sajátja) |
 | mnArpee presetek | `Documents\MNAudio\mnArpee` (ugyanaz, mint az mnArpee sajátja) |
+
+## Drag MIDI: a végeredmény klipként
+
+Az mnKarp megjegyzi, amit az utolsó 10 percben kiküldött. A felső sáv **Drag MIDI** gombja az **utolsó részt** adja át a DAW-nak: húzd a
+gombot egy sávra (vagy az arrangerbe), és a hangok MIDI-klipként odakerülnek. Kattintásra `.mid` fájlba menti.
+
+- Az utolsó rész a legutóbbi játék: az első hanggal kezdődik, amely előtt legalább 2 másodpercig semmi sem szólt (vagy ahol a DAW
+  loopja visszaugrott), és az utolsó hangig tart.
+- Ha a DAW transzportja fut, a klip az első hang ütemének elején kezdődik, így arra az ütemre ejtve a helyén lesz. Transzport nélkül
+  az első hanggal kezdődik.
+- A fájlban benne van a tempó is; negyedenként 960 tick.
+- Amíg nincs mit áthúzni, a gomb szürke.
 
 ## A DAW-ban: automatizálás és programlista
 

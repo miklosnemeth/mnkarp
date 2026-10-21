@@ -16,3 +16,7 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 - A Windows installer and a user guide in English and Hungarian (PDF).
 - mnArpee's parameters (rate, octave, gate, swing, steps, latch, group, cut) are host parameters of the rack, so they can be automated, recorded and mapped; they follow the controls of mnArpee's window.
 - The host's preset (program) list is the list of the rack presets (128 slots, oldest first): choosing a program in the DAW loads that rack preset.
+- Drag MIDI: drag the last take (what the rack played since the last pause) into the DAW as a MIDI clip, starting on its bar and with its tempo, or click to save it as a file.
+- A dot by the rack preset's name marks unsaved changes; choosing another preset asks to save them first. The menu has Revert to saved, and Delete asks first.
+- The questions (the name of a preset, replacing or deleting one) open inside the plugin window, in its own look.
+- A home page in English and Hungarian.

@@ -20,6 +20,7 @@ public:
     ~MnKarpAudioProcessorEditor() override;
 
     void paint(juce::Graphics&) override;
+    void paintOverChildren(juce::Graphics&) override;
     void resized() override;
 
     // The size of both windows (the zoom of the rack).
@@ -91,6 +92,49 @@ private:
         juce::String shown;
     };
 
+    // A dialog inside the window (as in mnKord and mnArpee): a title, a message, an optional text field and
+    // buttons. Enter presses the default button, Escape the cancel button.
+    class Dialog : public juce::Component
+    {
+    public:
+        Dialog(const juce::String& title, const juce::String& message, bool withField, const juce::String& initialText,
+               const juce::StringArray& buttonNames, int defaultButton, int cancelButton,
+               std::function<void(int button, juce::String text)> done);
+        void paint(juce::Graphics&) override;
+        void resized() override;
+        bool keyPressed(const juce::KeyPress&) override;
+        void focusFirst();
+        // Answers the dialog (once): closes it, then calls `done` with the button and the text.
+        void finish(int button);
+        int getCancelButton() const { return cancelButton; }
+
+        std::function<void()> onClose;
+
+    private:
+        juce::Rectangle<int> cardBounds() const;
+
+        juce::String title, message;
+        std::unique_ptr<juce::TextEditor> field;
+        juce::OwnedArray<juce::TextButton> buttons;
+        int defaultButton, cancelButton;
+        std::function<void(int, juce::String)> done;
+        bool finished = false;
+    };
+
+    // "Drag MIDI": dragged, it hands the take to the DAW as a MIDI file; clicked, it saves it as one.
+    struct TakeButton : public juce::Component,
+                        public juce::SettableTooltipClient
+    {
+        explicit TakeButton(MnKarpAudioProcessorEditor& ownerRef) : owner(ownerRef) { setRepaintsOnMouseActivity(true); }
+        void paint(juce::Graphics&) override;
+        void mouseDrag(const juce::MouseEvent&) override;
+        void mouseUp(const juce::MouseEvent&) override;
+
+        MnKarpAudioProcessorEditor& owner;
+        bool available = false;
+        bool dragged = false;
+    };
+
     // One stage: the strip (switch, name, fold arrow) and the plugin's editor under it.
     class Section : public juce::Component,
                     private juce::ComponentListener
@@ -145,9 +189,20 @@ private:
     void showPresetMenu();
     void stepPreset(int delta);
     void saveClicked();
-    void promptName(const juce::String& initial, std::function<void(juce::String)> done);
+    void promptName(const juce::String& initial);
     void saveAs(const juce::String& name);
+    void showSaveFailed();
+    void deleteDialog(const juce::String& name);
+    // Loads a preset, after asking about the unsaved changes of the current one.
+    void loadPresetChecked(const juce::String& name);
+    // Calls proceed() now, or after the user saved or discarded the changes of the current rack preset.
+    void confirmLeavePreset(std::function<void()> proceed);
     void refreshPresetButton();
+    void dragTake();
+    void saveTake();
+    void showDialog(const juce::String& title, const juce::String& message, bool withField, const juce::String& initialText,
+                    const juce::StringArray& buttonNames, int defaultButton, int cancelButton,
+                    std::function<void(int, juce::String)> done);
 
     MnKarpAudioProcessor& rack;
     RackLookAndFeel lookAndFeel;
@@ -156,6 +211,8 @@ private:
     juce::ArrowButton prevPresetButton { "previous preset", 0.5f, juce::Colour(0xfff0faf3) };
     juce::ArrowButton nextPresetButton { "next preset", 0.0f, juce::Colour(0xfff0faf3) };
     juce::TextButton presetButton, saveButton, zoomButton;
+    TakeButton takeButton { *this };
+    std::unique_ptr<juce::FileChooser> fileChooser;
     juce::Rectangle<int> brandArea;
 
     std::array<std::unique_ptr<Section>, MnKarpAudioProcessor::numStages> sections;
@@ -163,6 +220,9 @@ private:
     juce::Point<int> shownSizes[MnKarpAudioProcessor::numStages];
     bool shownFolded[MnKarpAudioProcessor::numStages] {};
     juce::String shownPreset { "\n" };
+    bool shownDirty = false;
+    int dirtyTick = 0;
+    std::unique_ptr<Dialog> dialog;
     bool syncing = false;
     bool ready = false;   // all sections exist (a section resizing its editor while they are made must not lay out)
 
