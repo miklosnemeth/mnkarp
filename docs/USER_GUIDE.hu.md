@@ -44,7 +44,7 @@ A rackben az mnKordnak egy billentyűzete van, közvetlenül fölötte egy **tri
 
 - **A trigger-sávban** minden billentyű fölött van egy kis cella (a fekete billentyűké a sáv felső felében, a fehéreké az alsóban).
   Egy cellára kattintva azt a billentyűt választod **triggernek**: ezt kell lenyomnod az akkordhoz. Jobb klikkre az akkordsablonok
-  jönnek elő. Az akkorddal már rendelkező billentyűk cellája halványkék, a kiválasztotté élénkkék, fehér kerettel. Ha skála van
+  jönnek elő. Az akkorddal már rendelkező billentyűk cellája halványpiros, a kiválasztotté élénkpiros, fehér kerettel. Ha skála van
   kiválasztva, csak a skála hangjainak van cellája.
 - **A billentyűk** a kiválasztott trigger akkordját szerkesztik: kattintásra hozzáadják vagy elveszik az akkordhangot, egy
   akkordhangot fel-le húzva a velocityjét állítod, jobb klikkre megfordíthatod az akkordot.
@@ -52,8 +52,8 @@ A rackben az mnKordnak egy billentyűzete van, közvetlenül fölötte egy **tri
 | Szín | Jelentés |
 |------|----------|
 | zöld billentyű | a kiválasztott akkord hangja (a fokával: R, 3, 5, ...) |
-| kék billentyű | a kiválasztott trigger (kék sáv a tetején, ha akkordhang is) |
-| kék sáv a billentyű tetején | a kontrolleren éppen lenyomott billentyű |
+| piros billentyű | a kiválasztott trigger (piros sáv a tetején, ha akkordhang is) |
+| piros sáv a billentyű tetején | a kontrolleren éppen lenyomott billentyű |
 | narancs sáv a billentyű alján | szóló akkordhang |
 
 A sáv fölötti sorban a trigger neve, a velocity réteg, a Learn, a Copy up / down és a skála van; a billentyűk alatti sorban az

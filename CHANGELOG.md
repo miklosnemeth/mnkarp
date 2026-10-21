@@ -20,5 +20,5 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 - A dot by the rack preset's name marks unsaved changes; choosing another preset asks to save them first. The menu has Revert to saved, and Delete asks first.
 - The questions (the name of a preset, replacing or deleting one) open inside the plugin window, in its own look.
 - A home page in English and Hungarian.
-- mnKord has one keyboard in the rack: the trigger keys are chosen in a lane above the keys, the chord notes are clicked on the same keyboard, and colours tell trigger keys (blue), chord notes (green), played keys and sounding notes apart. The rack is shorter for it.
+- mnKord has one keyboard in the rack: the trigger keys are chosen in a lane above the keys, the chord notes are clicked on the same keyboard, and colours tell trigger keys (red), chord notes (green), played keys and sounding notes apart. The rack is shorter for it.
 - mnKarp builds and installs on its own, with its own copies of mnKord and mnArpee.

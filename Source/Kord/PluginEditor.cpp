@@ -3692,7 +3692,7 @@ bool MnKordAudioProcessorEditor::isSelectedTriggerKey(int midiNoteNumber) const
 
 juce::Colour MnKordAudioProcessorEditor::getTriggerColour() const
 {
-    return juce::Colour(0xff5ab4ff);
+    return juce::Colour(0xffff5d5d);   // the MNAudio red (Palette::accent2)
 }
 
 //==============================================================================
