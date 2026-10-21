@@ -5,8 +5,7 @@
     docs/hu/index.html   Hungarian home page
     docs/sitemap.xml     both pages, with hreflang alternates
 
-The look is mnKord's: the stylesheet is read from ../mnKord/site/site.css, so the three MNAudio pages stay the
-same. The version comes from CMakeLists.txt. The FAQ is written once (FAQ below) and feeds both the visible
+The look is mnKord's: site/site.css is a copy of mnKord's stylesheet, so the MNAudio pages look the same. The version comes from CMakeLists.txt. The FAQ is written once (FAQ below) and feeds both the visible
 questions and the FAQPage structured data.
 
     python site/build-site.py
@@ -22,7 +21,7 @@ import struct
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DOCS = os.path.join(ROOT, "docs")
-KORD_CSS = os.path.join(ROOT, "..", "mnKord", "site", "site.css")
+KORD_CSS = os.path.join(ROOT, "site", "site.css")
 
 SITE = "https://miklosnemeth.github.io/mnkarp/"
 REPO = "https://github.com/miklosnemeth/mnkarp"

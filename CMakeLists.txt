@@ -10,17 +10,8 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# mnKarp does not copy mnKord and mnArpee: it compiles their sources in place, so a fix in either
-# plugin is in the rack with the next build.
-set(MNKARP_KORD_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/../mnKord"  CACHE PATH "The mnKord checkout")
-set(MNKARP_ARPEE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../mnArpee" CACHE PATH "The mnArpee checkout")
-set(MNKARP_JUCE_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/../JUCE"    CACHE PATH "Local JUCE checkout")
-
-foreach(_dir IN ITEMS "${MNKARP_KORD_DIR}/Source" "${MNKARP_ARPEE_DIR}/Source")
-    if(NOT IS_DIRECTORY "${_dir}")
-        message(FATAL_ERROR "${_dir} not found: set MNKARP_KORD_DIR and MNKARP_ARPEE_DIR")
-    endif()
-endforeach()
+# JUCE: a local checkout next to this folder when there is one, else fetched.
+set(MNKARP_JUCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../JUCE" CACHE PATH "Local JUCE checkout")
 
 if(EXISTS "${MNKARP_JUCE_DIR}/CMakeLists.txt")
     add_subdirectory("${MNKARP_JUCE_DIR}" JUCE)
@@ -33,19 +24,10 @@ else()
     FetchContent_MakeAvailable(juce)
 endif()
 
-# The versions of the two plugins, read from their own CMakeLists.txt (shown in their title bars).
-function(mnkarp_read_version file out)
-    file(STRINGS "${file}" _line REGEX "^project\\(.*VERSION")
-    if(_line MATCHES "VERSION ([0-9]+\\.[0-9]+\\.[0-9]+)")
-        set(${out} "${CMAKE_MATCH_1}" PARENT_SCOPE)
-    else()
-        set(${out} "dev" PARENT_SCOPE)
-    endif()
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${file}")
-endfunction()
-mnkarp_read_version("${MNKARP_KORD_DIR}/CMakeLists.txt" MNKARP_KORD_VERSION)
-mnkarp_read_version("${MNKARP_ARPEE_DIR}/CMakeLists.txt" MNKARP_ARPEE_VERSION)
-message(STATUS "mnKarp ${PROJECT_VERSION} = mnKord ${MNKARP_KORD_VERSION} + mnArpee ${MNKARP_ARPEE_VERSION}")
+# mnKarp has its own copies of mnKord and mnArpee (Source/Kord, Source/Arpee; see Source/ORIGIN.md). Their title bars
+# show the version they were taken from.
+set(MNKARP_KORD_VERSION "1.6.1")
+set(MNKARP_ARPEE_VERSION "1.0.0")
 
 # mnKord's editor includes the generated MnKordVersion.h.
 file(CONFIGURE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/MnKordVersion.h" @ONLY CONTENT
@@ -53,18 +35,6 @@ file(CONFIGURE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/MnKordVersion.h" @O
 #define MNKORD_VERSION        \"@MNKARP_KORD_VERSION@\"
 #define MNKORD_VERSION_STRING \"@MNKARP_KORD_VERSION@\"
 ")
-
-# Both plugins have a PluginProcessor.h, so the rack includes them as <mnKord/PluginProcessor.h> and
-# <mnArpee/PluginProcessor.h>: these forwarding headers point at the real files.
-function(mnkarp_forward_header plugin dir header)
-    file(CONFIGURE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/${plugin}/${header}" @ONLY CONTENT
-"#pragma once
-#include \"@dir@/Source/@header@\"
-")
-endfunction()
-mnkarp_forward_header(mnKord  "${MNKARP_KORD_DIR}"  PluginProcessor.h)
-mnkarp_forward_header(mnKord  "${MNKARP_KORD_DIR}"  MnAudioUi.h)
-mnkarp_forward_header(mnArpee "${MNKARP_ARPEE_DIR}" PluginProcessor.h)
 
 juce_add_plugin(mnKarp
     COMPANY_NAME "MNAudio"
@@ -86,39 +56,27 @@ juce_add_plugin(mnKarp
 
 juce_generate_juce_header(mnKarp)
 
-# One copy of the fonts for all three (the two plugins ship the same files).
+# Montserrat (titles) and Roboto Condensed (UI text), SIL Open Font License; one copy for the rack and both plugins.
 juce_add_binary_data(mnKarpFonts
     SOURCES
-        "${MNKARP_KORD_DIR}/Resources/Fonts/Montserrat.ttf"
-        "${MNKARP_KORD_DIR}/Resources/Fonts/RobotoCondensed.ttf"
+        Resources/Fonts/Montserrat.ttf
+        Resources/Fonts/RobotoCondensed.ttf
 )
-
-set(MNKARP_KORD_SOURCES
-    "${MNKARP_KORD_DIR}/Source/PluginProcessor.cpp"
-    "${MNKARP_KORD_DIR}/Source/PluginEditor.cpp"
-    "${MNKARP_KORD_DIR}/Source/NoteName.cpp"
-    "${MNKARP_KORD_DIR}/Source/ChordSymbol.cpp")
-set(MNKARP_ARPEE_SOURCES
-    "${MNKARP_ARPEE_DIR}/Source/PatternData.cpp"
-    "${MNKARP_ARPEE_DIR}/Source/ArpEngine.cpp"
-    "${MNKARP_ARPEE_DIR}/Source/PresetLibrary.cpp"
-    "${MNKARP_ARPEE_DIR}/Source/PluginProcessor.cpp"
-    "${MNKARP_ARPEE_DIR}/Source/PluginEditor.cpp"
-    "${MNKARP_ARPEE_DIR}/Source/StepGrid.cpp"
-    "${MNKARP_ARPEE_DIR}/Source/Fonts.cpp")
-
-# Each of the two plugin processors defines the host's entry point createPluginFilter(); the rack
-# has its own (Source/KarpProcessor.cpp), so theirs are renamed.
-set_source_files_properties("${MNKARP_KORD_DIR}/Source/PluginProcessor.cpp"
-    PROPERTIES COMPILE_DEFINITIONS "createPluginFilter=mnKordEntryPointNotUsed")
-set_source_files_properties("${MNKARP_ARPEE_DIR}/Source/PluginProcessor.cpp"
-    PROPERTIES COMPILE_DEFINITIONS "createPluginFilter=mnArpeeEntryPointNotUsed")
 
 target_sources(mnKarp PRIVATE
     Source/KarpProcessor.cpp
     Source/KarpEditor.cpp
-    ${MNKARP_KORD_SOURCES}
-    ${MNKARP_ARPEE_SOURCES})
+    Source/Kord/PluginProcessor.cpp
+    Source/Kord/PluginEditor.cpp
+    Source/Kord/NoteName.cpp
+    Source/Kord/ChordSymbol.cpp
+    Source/Arpee/PatternData.cpp
+    Source/Arpee/ArpEngine.cpp
+    Source/Arpee/PresetLibrary.cpp
+    Source/Arpee/PluginProcessor.cpp
+    Source/Arpee/PluginEditor.cpp
+    Source/Arpee/StepGrid.cpp
+    Source/Arpee/Fonts.cpp)
 
 target_include_directories(mnKarp PRIVATE
     Source

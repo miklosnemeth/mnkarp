@@ -4,7 +4,7 @@
 ;   ISCC.exe /DMyAppVersion=1.0.0 installer\mnKarp.iss
 ; The result is build\installer\mnKarp-<version>-win-x64-setup.exe.
 ; What the MNAudio installers share (the folders, closing the DAW, the old version) is in
-; MnAudioInstaller.iss; mnKarp uses mnKord's copy of that file instead of a third one.
+; MnAudioInstaller.iss, the same file as in mnKord and mnArpee.
 
 #ifndef MyAppVersion
   #error Pass the version: ISCC.exe /DMyAppVersion=x.y.z installer\mnKarp.iss
@@ -22,7 +22,7 @@
 #define MyAppGuid "D41C8E27-6A93-4B05-9F1D-3E7A5C20B8F6"
 #define MyRepo "mnkarp"
 #define MyDocsLabel "User guide and licenses"
-#include "..\..\mnKord\installer\MnAudioInstaller.iss"
+#include "MnAudioInstaller.iss"
 
 [Setup]
 ; The same GUID as MyAppGuid ({{ is the escape of a single brace). The old uninstaller is found with it.
@@ -34,12 +34,12 @@ OutputDir={#InstallerOutputDir}
 [Files]
 ; The plugin goes to the standard VST3 folder every host scans, in a folder of its own for MNAudio.
 Source: "{#Vst3Bundle}\*"; DestDir: "{#MyVst3Dest}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; Licenses and the readme sit in the install folder (the fonts are mnKord's, which mnKarp builds in).
+; Licenses and the readme sit in the install folder.
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\CHANGELOG.md"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\..\mnKord\Resources\Fonts\Montserrat-OFL.txt"; DestDir: "{app}\Licenses"; Flags: ignoreversion
-Source: "..\..\mnKord\Resources\Fonts\RobotoCondensed-LICENSE.txt"; DestDir: "{app}\Licenses"; Flags: ignoreversion
+Source: "..\Resources\Fonts\Montserrat-OFL.txt"; DestDir: "{app}\Licenses"; Flags: ignoreversion
+Source: "..\Resources\Fonts\RobotoCondensed-LICENSE.txt"; DestDir: "{app}\Licenses"; Flags: ignoreversion
 ; The user guide (English and Hungarian), with Start menu shortcuts.
 Source: "..\docs\mnKarp-User-Guide.pdf"; DestDir: "{app}\Docs"; Flags: ignoreversion
 Source: "..\docs\mnKarp-Felhasznaloi-utmutato.pdf"; DestDir: "{app}\Docs"; Flags: ignoreversion

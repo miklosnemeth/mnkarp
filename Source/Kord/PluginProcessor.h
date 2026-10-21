@@ -1,0 +1,282 @@
+#pragma once
+#include <JuceHeader.h>
+
+//==============================================================================
+struct NoteMapping
+{
+    static constexpr int defaultOutputVelocity = 100;
+
+    int inputNote = -1;
+    // Lowest input velocity that plays this mapping. A note can have a second, "hard" mapping with a
+    // higher minVelocity: the harder one is played, the further up the layers it goes.
+    int minVelocity = 1;
+    std::vector<int> outputNotes;
+    // Per output note velocity, independent of the played input velocity. Notes without an
+    // entry use defaultOutputVelocity.
+    std::map<int, int> outputVelocities;
+
+    int velocityFor(int outputNote) const
+    {
+        const auto it = outputVelocities.find(outputNote);
+        return it != outputVelocities.end() ? it->second : defaultOutputVelocity;
+    }
+};
+
+struct Preset
+{
+    juce::String name;
+    juce::String group;
+    juce::String author;
+    // Free-form style tags (Pop, Jazz, ...), shown as a filter column in the browser.
+    juce::StringArray tags;
+    std::vector<NoteMapping> mappings;
+
+    // Where it lives. Factory presets are built into the plugin (and mirrored into the Factory
+    // folder); user presets are one XML file each in the User folder. A user preset with no
+    // file hasn't been written there (e.g. it was restored from a project on another machine).
+    bool isFactory = false;
+    juce::File file;
+    // The preset's serialized content at the last load/save, to tell whether it has unsaved
+    // changes. Empty = never saved.
+    juce::String savedXml;
+};
+
+//==============================================================================
+class MnKordAudioProcessor : public juce::AudioProcessor,
+                             private juce::AsyncUpdater
+{
+public:
+    //==============================================================================
+    MnKordAudioProcessor();
+    ~MnKordAudioProcessor() override;
+
+    //==============================================================================
+    void prepareToPlay(double sampleRate, int samplesPerBlock) override;
+    void releaseResources() override;
+
+    void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+
+    //==============================================================================
+    juce::AudioProcessorEditor* createEditor() override;
+    bool hasEditor() const override;
+
+    //==============================================================================
+    const juce::String getName() const override;
+
+    bool acceptsMidi() const override;
+    bool producesMidi() const override;
+    bool isMidiEffect() const override;
+
+    double getTailLengthSeconds() const override;
+
+    //==============================================================================
+    // Host program list mirrors the preset list (factory presets first), padded with empty slots
+    // to a count that never changes (see minHostPrograms). Some hosts change the
+    // program from the audio thread (VST3 program parameter); the switch can read a preset file,
+    // so it is then handed to the message thread, and getCurrentProgram() reports the requested
+    // program until it has happened.
+    int getNumPrograms() override;
+    int getCurrentProgram() override;
+    void setCurrentProgram(int index) override;
+    const juce::String getProgramName(int index) override;
+    void changeProgramName(int index, const juce::String& newName) override;
+    // Applies a program change requested off the message thread, if one is waiting. Called on
+    // the message thread (automatically, via the async update).
+    void applyPendingProgramChange();
+    // Tells the host the program list or the current program changed (on the message thread;
+    // from any other thread it is passed on asynchronously). The processor calls it after its
+    // own list changes; the editor after renaming a preset in place.
+    void notifyHostProgramsChanged();
+
+    // The host always sees this many programs (at least minHostPrograms): presets first, then
+    // empty slots named "-".
+    static constexpr int minHostPrograms = 128;
+
+    //==============================================================================
+    void getStateInformation(juce::MemoryBlock& destData) override;
+    void setStateInformation(const void* data, int sizeInBytes) override;
+
+    //==============================================================================
+    // Preset management
+    std::vector<Preset>& getPresets() { return presets; }
+    const std::vector<Preset>& getPresets() const { return presets; }
+    int getActivePresetIndex() const { return activePresetIndex; }
+
+    // The preset library lives in Documents/MNAudio/mnKord: "Factory" mirrors the built-in
+    // presets (read only, rewritten when they change) and "User" holds one XML file per
+    // saved user preset, shared by every project and instance.
+    static juce::File getLibraryFolder();
+    static juce::File getFactoryFolder();
+    static juce::File getUserFolder();
+    // Relocates the library (for tests, or a portable setup). An empty File restores the default.
+    static void overrideLibraryFolder(const juce::File& folder);
+
+    // Selects a preset. The one being left silently loses unsaved changes (the editor asks
+    // first); the project state keeps only the active preset's working copy.
+    void setActivePresetIndex(int index);
+    // Saves a copy of preset as a new user preset (a new file), selects it, and returns
+    // whether the file could be written (the preset is added and selected either way).
+    bool addPreset(const Preset& preset);
+    // Moves a user preset's file to the recycle bin and removes it. False for factory
+    // presets or if the file couldn't be trashed.
+    bool deletePreset(int index);
+
+    bool isPresetDirty(int index) const;
+    // Factory presets can always be reverted; user presets only while their file exists.
+    bool canRevertPreset(int index) const;
+    // Reloads a preset's content from its file (or the built-in version for factory presets).
+    bool revertPreset(int index);
+    // Writes a user preset back to its file (creating one if it has none).
+    bool saveUserPreset(int index);
+    // Picks up user preset files added or removed since the library was loaded.
+    void refreshUserLibrary();
+
+    // Favourites are shared by every project, kept in Documents\MNAudio\mnKord\favorites.txt
+    // (message thread only). Factory presets are keyed by name, user presets by file.
+    bool isFavoritePreset(const Preset& preset) const;
+    void setFavoritePreset(const Preset& preset, bool shouldBeFavorite);
+
+    // Guards presets/mappings across the audio and GUI threads. The editor must hold this
+    // while structurally mutating presets/mappings obtained via getPresets().
+    juce::CriticalSection& getStateLock() { return stateLock; }
+
+    // File I/O. Import saves every recognised preset in the file as a new user preset and
+    // selects the last one. Returns how many presets were added (0 = invalid/empty file).
+    int importPresetsFromFile(const juce::File& file);
+    bool exportPresetToFile(int index, const juce::File& file) const;
+
+    // A set of MIDI note numbers (0-127) as two 64-bit words.
+    struct NoteBits
+    {
+        std::array<std::uint64_t, 2> words {};
+
+        void add(int note)
+        {
+            if (note >= 0 && note < 128)
+                words[(size_t) (note >> 6)] |= std::uint64_t(1) << (note & 63);
+        }
+
+        bool contains(int note) const
+        {
+            return note >= 0 && note < 128 && ((words[(size_t) (note >> 6)] >> (note & 63)) & 1u) != 0;
+        }
+
+        void remove(int note)
+        {
+            if (note >= 0 && note < 128)
+                words[(size_t) (note >> 6)] &= ~(std::uint64_t(1) << (note & 63));
+        }
+
+        bool isEmpty() const { return (words[0] | words[1]) == 0; }
+
+        NoteBits operator|(const NoteBits& other) const
+        {
+            NoteBits result;
+            result.words = { words[0] | other.words[0], words[1] | other.words[1] };
+            return result;
+        }
+
+        bool operator==(const NoteBits& other) const { return words == other.words; }
+        bool operator!=(const NoteBits& other) const { return words != other.words; }
+    };
+
+    // INPUT notes currently held and OUTPUT notes currently sounding (any channel), for the
+    // editor's live display. Published by the
+    // audio thread at the end of every block, so reading them never touches stateLock.
+    NoteBits getActiveInputNotes() const  { return loadNoteBits(activeInputWords); }
+    NoteBits getActiveOutputNotes() const { return loadNoteBits(activeOutputWords); }
+
+    // For MIDI learn: (counter << 8) | note number of the latest note-on that arrived. The
+    // counter changes with every note-on, so the editor can tell a repeated note from none.
+    std::uint32_t getInputNoteOnStamp() const { return lastNoteOnStamp.load(std::memory_order_relaxed); }
+
+private:
+    //==============================================================================
+    void handleAsyncUpdate() override;
+    std::atomic<int> pendingProgram { -1 };
+    std::atomic<bool> hostNotificationPending { false };
+    int hostProgramCount = minHostPrograms;
+
+    juce::String favoriteKeyFor(const Preset& preset) const;
+    void loadFavorites();
+    juce::StringArray favoriteKeys;
+
+    std::vector<Preset> presets;
+    int activePresetIndex = -1;
+
+    // Runtime note state, per MIDI channel (index channel - 1). Fixed-size so the audio thread
+    // never allocates.
+    static constexpr int numChannels = 16;
+
+    struct ChannelState
+    {
+        NoteBits heldInputs;                       // input notes currently held
+        std::array<NoteBits, 128> chordOf {};      // output notes each held input note started
+        std::array<std::uint16_t, 128> refCount {}; // held input notes using each output note
+        NoteBits sounding;                         // output notes with refCount > 0
+    };
+
+    std::array<ChannelState, numChannels> channels {};
+    std::vector<std::pair<int, int>> notesToFlush;   // (channel, note) to release on the next processBlock
+    juce::MidiBuffer outputMessages;                  // reused every block
+
+    // Guards all runtime state + preset structural edits across the audio and GUI threads.
+    juce::CriticalSection stateLock;
+    // Guards notesToFlush (written on GUI thread, consumed on audio thread).
+    juce::CriticalSection flushLock;
+
+    using AtomicNoteWords = std::array<std::atomic<std::uint64_t>, 2>;
+    AtomicNoteWords activeInputWords {};
+    std::atomic<std::uint32_t> lastNoteOnStamp { 0 };
+    AtomicNoteWords activeOutputWords {};
+
+    static NoteBits loadNoteBits(const AtomicNoteWords& source)
+    {
+        NoteBits bits;
+        for (size_t i = 0; i < bits.words.size(); ++i)
+            bits.words[i] = source[i].load(std::memory_order_relaxed);
+        return bits;
+    }
+
+    // Recomputes activeInputWords/activeOutputWords from the runtime note state. Caller must
+    // hold stateLock.
+    void publishActiveNotes();
+
+    void handleNoteOn(int channel, int note, int velocity, int samplePosition, juce::MidiBuffer& output);
+    void handleNoteOff(int channel, int note, int samplePosition, juce::MidiBuffer& output);
+    // All notes off / all sound off: releases every output note on channel.
+    void handleAllNotesOff(int channel, int samplePosition, juce::MidiBuffer& output);
+    // Delivers note-offs for notesToFlush into the output buffer. Caller must hold stateLock.
+    void flushPendingNoteOffs(juce::MidiBuffer& output);
+    // Clears runtime note state and queues note-offs for any still-sounding output notes.
+    // Caller must hold stateLock.
+    void clearActiveNotes();
+
+    static std::unique_ptr<juce::XmlElement> presetToXml(const Preset& preset);
+    static Preset presetFromXml(const juce::XmlElement& xml);
+    static std::vector<Preset> presetsFromXmlRoot(const juce::XmlElement& root);
+    static std::vector<Preset> createFactoryPresets();
+
+    // Library helpers. None of them touch the live preset list or take stateLock, so file I/O
+    // never blocks the audio thread: callers read/write files first, then swap results in
+    // under the lock.
+    static juce::String fingerprint(const Preset& preset);
+    static std::vector<Preset> buildFactoryPresets();      // built in, flagged, with fingerprints
+    // One preset per file in User/, in the order of user-order.txt: the order they were added in,
+    // so the host's program numbers stay the same across a reload. Files not listed there
+    // (dropped in from outside) come after the listed ones, by name.
+    static std::vector<Preset> loadUserPresets();
+    static juce::File getUserOrderFile();
+    // Writes the user presets' current order to user-order.txt. Call after the list changes.
+    void saveUserOrder();
+    static std::vector<Preset> buildLibrary();             // factory (synced to disk) + user
+    static void syncFactoryFolder(const std::vector<Preset>& factory);
+    static juce::File uniqueUserFile(const juce::String& presetName);
+    static bool writePresetFile(const Preset& preset, const juce::File& file, bool factoryMirror);
+    static bool loadPresetFile(const juce::File& file, Preset& result);   // exactly one preset
+    // Writes preset as a new user file and returns the preset as it should be listed
+    // (isFactory false, file and fingerprint set if the write worked).
+    static Preset saveAsNewUserPreset(const Preset& preset, bool& written);
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MnKordAudioProcessor)
+};

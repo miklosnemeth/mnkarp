@@ -1,7 +1,7 @@
 #include "KarpEditor.h"
 
 #include <BinaryData.h>
-#include <mnKord/MnAudioUi.h>
+#include "MnAudioUi.h"
 
 namespace
 {

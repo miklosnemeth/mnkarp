@@ -3,8 +3,8 @@
 
 #include "MirrorParameter.h"
 
-#include <mnArpee/PluginProcessor.h>
-#include <mnKord/PluginProcessor.h>
+#include "Arpee/PluginProcessor.h"
+#include "Kord/PluginProcessor.h"
 
 #include <array>
 #include <atomic>

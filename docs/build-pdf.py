@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Builds the PDF versions of the mnKarp user guides (docs/*.pdf) from the Markdown files.
 
-It uses the converter of mnKord (../mnKord/docs/build-pdf.py: a small Markdown converter, and Microsoft
-Edge or Chrome printing the HTML to PDF), with mnKarp's own guides, cover and version.
+It uses pdf_converter.py (mnKord's converter: a small Markdown converter, and Microsoft Edge or Chrome
+printing the HTML to PDF), with mnKarp's own guides, cover and version.
 
     python docs/build-pdf.py
 """
@@ -12,7 +12,7 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-KORD_SCRIPT = os.path.join(HERE, "..", "..", "mnKord", "docs", "build-pdf.py")
+KORD_SCRIPT = os.path.join(HERE, "pdf_converter.py")
 
 COVER = {
     "en": {"title": "User guide", "tagline": "Chords and arpeggios in one rack.", "version": "Version",
@@ -63,5 +63,5 @@ def main():
 
 if __name__ == "__main__":
     if not os.path.exists(KORD_SCRIPT):
-        sys.exit("mnKord's docs/build-pdf.py is needed (../mnKord).")
+        sys.exit("docs/pdf_converter.py is missing.")
     main()
