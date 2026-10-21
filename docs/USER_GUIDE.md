@@ -10,8 +10,9 @@ MIDI in -> [ mnKord ] -> [ mnArpee ] -> MIDI out
               on/off        on/off
 ```
 
-The two windows are the real mnKord and mnArpee, so everything in their own user guides (chord mapping, the pattern
-grid, the preset browsers, Undo / Redo) works here the same way. This guide is about what the rack adds.
+The two windows are mnKord and mnArpee, so their user guides (the pattern grid, the preset browsers, chord symbols, scales,
+Undo / Redo) apply here too. One thing is different: mnKord has **one keyboard** in the rack instead of the INPUT and CHORD
+keyboards (see below). This guide is about what the rack adds.
 
 ## Installing
 
@@ -36,6 +37,27 @@ From top to bottom:
 - **The note line.** The notes that mnKord gives to mnArpee, live: when you press a key you see the chord here. It is a quick way to
   hear with your eyes what the first stage does.
 - **The mnArpee section.** Its strip and mnArpee's window.
+
+### mnKord's keyboard
+
+In the rack mnKord has a single keyboard, with a **trigger lane** right above the keys:
+
+- **The trigger lane** has a small cell over every key (the black keys' cells in its upper half, the white keys' in the lower half).
+  Click a cell to choose that key as the **trigger key**: the key you play to get the chord. Right-click it for the chord templates.
+  Keys that already have a chord have a pale blue cell; the selected one is bright blue with a white frame. With a scale chosen, only
+  the keys of the scale have a cell.
+- **The keys** edit the chord of the selected trigger key: click a key to add or remove that chord note, drag a chord note up or down
+  to set its velocity, right-click to invert the chord.
+
+| Colour | Means |
+|--------|-------|
+| green key | a note of the selected chord (with its degree: R, 3, 5, ...) |
+| blue key | the selected trigger key (a blue band on top when it is also a chord note) |
+| blue band at the top of a key | a key you are playing on your controller |
+| orange band at the bottom of a key | a chord note that is sounding |
+
+The row above the lane has the trigger key's name, the velocity layer, Learn, Copy up / down and the scale; the row under the keys
+the chord's name and the field for typing a chord symbol.
 
 ### Switching a stage off
 

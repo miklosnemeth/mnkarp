@@ -20,7 +20,7 @@
 <meta property="og:locale:alternate" content="en_US">
 <meta property="og:image" content="https://miklosnemeth.github.io/mnkarp/images/main.png">
 <meta property="og:image:width" content="1126">
-<meta property="og:image:height" content="1418">
+<meta property="og:image:height" content="1280">
 <meta property="og:image:alt" content="Az mnKarp ablaka: felül az mnKord, alatta az mnArpee">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="mnKarp – ingyenes akkord + arpeggiátor rack plugin (VST3) Windowsra">
@@ -266,7 +266,9 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
     "A DAW programlistája a rack presetek listája (128 hely, a legrégebbitől kezdve).",
     "Host-paraméterek: a két kapcsoló és az mnArpee nyolc értéke, automatizáláshoz és kontrollerhez.",
     "MIDI áthúzás: az utolsó rész MIDI-klipként (tempóval, ütem elejéről), vagy fájlba mentve.",
-    "A valódi mnKord és mnArpee: a presetjeik, könyvtáraik, böngészőik és az Undo / Redo ugyanúgy működik, mint külön.",
+    "Az mnKord és az mnArpee: a presetjeik, könyvtáraik, böngészőik és az Undo / Redo ugyanúgy működik, mint külön.",
+    "Az mnKord egy billentyűzettel: fölötte a trigger-sáv, a billentyűkön az akkordhangok, színekkel megkülönböztetve.",
+    "Az mnKord által az mnArpee-nak átadott hangok élőben, a kettő között.",
     "Az mnKord és az mnArpee presetkönyvtára közös az önálló pluginokéval.",
     "A projekt mindkét fokozat teljes állapotát megtartja.",
     "Windows telepítő; útmutató angolul és magyarul."
@@ -359,7 +361,7 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
         <li>VST3 · Windows x64</li>
         <li>Ingyenes, nyílt forrású (AGPL-3.0)</li>
       </ul>
-      <div class="shot"><img src="../images/main.png" width="1126" height="1418" alt="Az mnKarp ablaka: felül a rack presetek, az mnKord billentyűi, a köztes hangok, az mnArpee mintarácsa"></div>
+      <div class="shot"><img src="../images/main.png" width="1126" height="1280" alt="Az mnKarp ablaka: felül a rack presetek, az mnKord billentyűi, a köztes hangok, az mnArpee mintarácsa"></div>
     </div>
     <section aria-labelledby="how">
       <h2 id="how" class="display">Hogyan működik</h2>
@@ -372,13 +374,13 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
     </section>
     <section id="features" aria-labelledby="feat">
       <h2 id="feat" class="display">Két plugin, egy rack</h2>
-      <p class="sub">A valódi mnKord és mnArpee, és amit a rack hozzátesz.</p>
+      <p class="sub">Az mnKord és az mnArpee, és amit a rack hozzátesz.</p>
       <ul class="cards">
         <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="7"/><path d="M12 3v7"/></svg></div><h3>Be/ki mindkettőre</h3><p>Mindkét fokozaton kapcsoló. Kikapcsolva a MIDI érintetlenül átmegy, és nem ragad be hang.</p></li>
         <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h6"/></svg></div><h3>Rack presetek</h3><p>A két plugin presetje és a két kapcsoló egy név alatt. Ez a DAW programlistája is.</p></li>
         <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18c3 0 3-12 6-12s3 12 6 12 3-8 6-8"/></svg></div><h3>Automatizálás</h3><p>A kapcsolók és az mnArpee rate, gate, swing, octave, steps, latch, group és cut értéke host-paraméter.</p></li>
         <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 20h16"/></svg></div><h3>MIDI áthúzás</h3><p>Az utoljára játszott részt MIDI-klipként behúzhatod a DAW-ba, az ütem elejére igazítva.</p></li>
-        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v8M12 5v8M16 5v8"/></svg></div><h3>Látod a hangokat</h3><p>A két fokozat közötti sor élőben mutatja, milyen akkordot ad át az mnKord az mnArpee-nak.</p></li>
+        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v8M12 5v8M16 5v8"/></svg></div><h3>Egy billentyűzet az akkordokhoz</h3><p>A triggert a billentyűk fölötti sávban választod, az akkordhangokat ugyanazon a billentyűzeten kattintod. A színek különválasztják őket.</p></li>
         <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/></svg></div><h3>Elfér a képernyőn</h3><p>Egy méret mindkét ablakra (60–115%), egyforma szélességgel, és a nem használt fokozat összecsukható.</p></li>
       </ul>
       <h3 class="listh">Minden funkció</h3>
@@ -400,7 +402,9 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
           <li>MIDI áthúzás: az utolsó rész MIDI-klipként (tempóval, ütem elejéről), vagy fájlba mentve.</li>
         </ul></div>
         <div class="fl"><h4>Belül</h4><ul>
-          <li>A valódi mnKord és mnArpee: a presetjeik, könyvtáraik, böngészőik és az Undo / Redo ugyanúgy működik, mint külön.</li>
+          <li>Az mnKord és az mnArpee: a presetjeik, könyvtáraik, böngészőik és az Undo / Redo ugyanúgy működik, mint külön.</li>
+          <li>Az mnKord egy billentyűzettel: fölötte a trigger-sáv, a billentyűkön az akkordhangok, színekkel megkülönböztetve.</li>
+          <li>Az mnKord által az mnArpee-nak átadott hangok élőben, a kettő között.</li>
           <li>Az mnKord és az mnArpee presetkönyvtára közös az önálló pluginokéval.</li>
           <li>A projekt mindkét fokozat teljes állapotát megtartja.</li>
           <li>Windows telepítő; útmutató angolul és magyarul.</li>

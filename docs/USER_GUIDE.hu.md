@@ -10,8 +10,9 @@ MIDI be -> [ mnKord ] -> [ mnArpee ] -> MIDI ki
               be/ki         be/ki
 ```
 
-A két ablak a valódi mnKord és mnArpee, ezért a saját útmutatóik minden része (akkordkiosztás, mintarács, presetböngésző,
-Undo / Redo) itt is ugyanúgy érvényes. Ez az útmutató csak azt írja le, amit a rack hozzátesz.
+A két ablak az mnKord és az mnArpee, ezért az útmutatóik (mintarács, presetböngésző, akkordszimbólumok, skálák, Undo / Redo)
+itt is érvényesek. Egy dolog más: a rackben az mnKordnak **egy billentyűzete** van az INPUT és a CHORD billentyűzet helyett (lásd
+lent). Ez az útmutató azt írja le, amit a rack hozzátesz.
 
 ## Telepítés
 
@@ -36,6 +37,27 @@ Fentről lefelé:
 - **A hangsor.** Azok a hangok, amelyeket az mnKord átad az mnArpee-nak, élőben: billentyű lenyomásakor itt látod az akkordot. Gyorsan
   megmutatja, mit csinál az első fokozat.
 - **Az mnArpee szekció.** A sávja és az mnArpee ablaka.
+
+### Az mnKord billentyűzete
+
+A rackben az mnKordnak egy billentyűzete van, közvetlenül fölötte egy **trigger-sávval**:
+
+- **A trigger-sávban** minden billentyű fölött van egy kis cella (a fekete billentyűké a sáv felső felében, a fehéreké az alsóban).
+  Egy cellára kattintva azt a billentyűt választod **triggernek**: ezt kell lenyomnod az akkordhoz. Jobb klikkre az akkordsablonok
+  jönnek elő. Az akkorddal már rendelkező billentyűk cellája halványkék, a kiválasztotté élénkkék, fehér kerettel. Ha skála van
+  kiválasztva, csak a skála hangjainak van cellája.
+- **A billentyűk** a kiválasztott trigger akkordját szerkesztik: kattintásra hozzáadják vagy elveszik az akkordhangot, egy
+  akkordhangot fel-le húzva a velocityjét állítod, jobb klikkre megfordíthatod az akkordot.
+
+| Szín | Jelentés |
+|------|----------|
+| zöld billentyű | a kiválasztott akkord hangja (a fokával: R, 3, 5, ...) |
+| kék billentyű | a kiválasztott trigger (kék sáv a tetején, ha akkordhang is) |
+| kék sáv a billentyű tetején | a kontrolleren éppen lenyomott billentyű |
+| narancs sáv a billentyű alján | szóló akkordhang |
+
+A sáv fölötti sorban a trigger neve, a velocity réteg, a Learn, a Copy up / down és a skála van; a billentyűk alatti sorban az
+akkord neve és az akkordszimbólum mezője.
 
 ### Fokozat kikapcsolása
 

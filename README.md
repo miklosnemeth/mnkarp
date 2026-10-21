@@ -24,6 +24,8 @@ MIDI in -> [ mnKord ] -> [ mnArpee ] -> MIDI out
   save it as a `.mid` file. A green dot by the rack preset's name marks unsaved changes; the questions open inside the window.
 - The two windows are always equally wide: resize one (mnArpee has a resize corner) and the other follows.
 - The arrow at the right of a strip **folds** the section's window away, to make the rack shorter.
+- mnKord has **one keyboard** in the rack: choose the trigger key in the lane above the keys (blue), and click the keys to edit
+  its chord (green); the keys being played and the sounding notes are marked too.
 - The windows are the plugins' own: presets, the preset libraries (`Documents\MNAudio\mnKord`, `...\mnArpee`),
   Undo / Redo and mnArpee's zoom and resize corner work as in the single plugins. The project keeps the state of both.
 

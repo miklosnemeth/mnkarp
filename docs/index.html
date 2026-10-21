@@ -20,7 +20,7 @@
 <meta property="og:locale:alternate" content="hu_HU">
 <meta property="og:image" content="https://miklosnemeth.github.io/mnkarp/images/main.png">
 <meta property="og:image:width" content="1126">
-<meta property="og:image:height" content="1418">
+<meta property="og:image:height" content="1280">
 <meta property="og:image:alt" content="The mnKarp window: mnKord above mnArpee">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="mnKarp – free chord + arpeggiator rack plugin (VST3) for Windows">
@@ -266,7 +266,9 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
     "The DAW's program list is the list of the rack presets (128 slots, oldest first).",
     "Host parameters: the two switches and mnArpee's eight values, for automation and MIDI controllers.",
     "Drag MIDI: the last take as a MIDI clip (with its tempo, starting on a bar), or save it as a file.",
-    "The real mnKord and mnArpee: their presets, libraries, browsers and Undo / Redo work as in the single plugins.",
+    "mnKord and mnArpee: their presets, libraries, browsers and Undo / Redo work as in the single plugins.",
+    "mnKord with one keyboard: the trigger keys in a lane above it, the chord notes on the keys, told apart by colour.",
+    "The notes mnKord hands to mnArpee, shown live between the two.",
     "mnKord's and mnArpee's preset libraries are shared with the single plugins.",
     "The project keeps the full state of both stages.",
     "Windows installer; user guide in English and Hungarian."
@@ -359,7 +361,7 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
         <li>VST3 · Windows x64</li>
         <li>Free and open source (AGPL-3.0)</li>
       </ul>
-      <div class="shot"><img src="images/main.png" width="1126" height="1418" alt="The mnKarp window: the rack presets on top, mnKord&#x27;s keyboards, the notes between, mnArpee&#x27;s pattern grid"></div>
+      <div class="shot"><img src="images/main.png" width="1126" height="1280" alt="The mnKarp window: the rack presets on top, mnKord&#x27;s keyboards, the notes between, mnArpee&#x27;s pattern grid"></div>
     </div>
     <section aria-labelledby="how">
       <h2 id="how" class="display">How it works</h2>
@@ -372,13 +374,13 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
     </section>
     <section id="features" aria-labelledby="feat">
       <h2 id="feat" class="display">Two plugins, one rack</h2>
-      <p class="sub">The real mnKord and mnArpee, with what a rack adds.</p>
+      <p class="sub">mnKord and mnArpee, with what a rack adds.</p>
       <ul class="cards">
         <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="7"/><path d="M12 3v7"/></svg></div><h3>On/off for each</h3><p>A power switch on each stage. Off, the MIDI passes it untouched, and nothing it played is left hanging.</p></li>
         <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h6"/></svg></div><h3>Rack presets</h3><p>Both plugins&#x27; presets and the two switches under one name. They are also the DAW&#x27;s program list.</p></li>
         <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18c3 0 3-12 6-12s3 12 6 12 3-8 6-8"/></svg></div><h3>Automation</h3><p>The switches and mnArpee&#x27;s rate, gate, swing, octave, steps, latch, group and cut are host parameters.</p></li>
         <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 20h16"/></svg></div><h3>Drag MIDI</h3><p>Drag the last thing you played into the DAW as a MIDI clip, on the bar it started on.</p></li>
-        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v8M12 5v8M16 5v8"/></svg></div><h3>See the notes</h3><p>A line between the two stages shows the chord that mnKord hands to mnArpee, live.</p></li>
+        <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v8M12 5v8M16 5v8"/></svg></div><h3>One keyboard for chords</h3><p>Pick the trigger key in the lane above the keys, click the chord notes on the same keyboard. Colours tell them apart.</p></li>
         <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/></svg></div><h3>Fits the screen</h3><p>One size for both windows (60 to 115%), equally wide, and fold a stage away when you don&#x27;t need it.</p></li>
       </ul>
       <h3 class="listh">Everything in the box</h3>
@@ -400,7 +402,9 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
           <li>Drag MIDI: the last take as a MIDI clip (with its tempo, starting on a bar), or save it as a file.</li>
         </ul></div>
         <div class="fl"><h4>Inside</h4><ul>
-          <li>The real mnKord and mnArpee: their presets, libraries, browsers and Undo / Redo work as in the single plugins.</li>
+          <li>mnKord and mnArpee: their presets, libraries, browsers and Undo / Redo work as in the single plugins.</li>
+          <li>mnKord with one keyboard: the trigger keys in a lane above it, the chord notes on the keys, told apart by colour.</li>
+          <li>The notes mnKord hands to mnArpee, shown live between the two.</li>
           <li>mnKord&#x27;s and mnArpee&#x27;s preset libraries are shared with the single plugins.</li>
           <li>The project keeps the full state of both stages.</li>
           <li>Windows installer; user guide in English and Hungarian.</li>
