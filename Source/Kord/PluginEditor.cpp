@@ -3742,7 +3742,9 @@ void MnKordAudioProcessorEditor::TriggerLane::paint(juce::Graphics& g)
         const bool mapped = owner.isMappedInputKey(note);
         const bool playing = owner.isPlayingKey(KeyboardRole::input, note);
 
-        juce::Colour fill = owner.getControlColour().withAlpha(0.55f);
+        // An empty cell looks like its key in miniature: light over a white key, dark with an outline over a black one.
+        const bool black = juce::MidiMessage::isMidiNoteBlack(note);
+        juce::Colour fill = black ? owner.getBlackKeyTopColour() : owner.getWhiteKeyBottomColour().withAlpha(0.32f);
         if (selected)
             fill = trigger;
         else if (playing)
@@ -3752,6 +3754,12 @@ void MnKordAudioProcessorEditor::TriggerLane::paint(juce::Graphics& g)
 
         g.setColour(fill);
         g.fillRoundedRectangle(cell, 2.5f);
+
+        if (black && ! selected && ! playing && ! mapped)
+        {
+            g.setColour(owner.getMutedTextColour().withAlpha(0.5f));
+            g.drawRoundedRectangle(cell.reduced(0.5f), 2.5f, 1.0f);
+        }
 
         if (selected)
         {

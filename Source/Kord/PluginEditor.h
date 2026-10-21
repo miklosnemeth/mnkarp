@@ -414,7 +414,7 @@ private:
     juce::Label selectedInputLabel;
     juce::Label chordNotesLabel;
 
-    static constexpr int TriggerLaneHeight = 20;
+    static constexpr int TriggerLaneHeight = 26;
     // trigger row 24 + strip 14 + lane + keyboard 140 + chord row 24, with the gaps and the card's padding
     static constexpr int keysCardHeight = 20 + 24 + 2 + 14 + 2 + TriggerLaneHeight + 1 + 140 + 6 + 24;
 
