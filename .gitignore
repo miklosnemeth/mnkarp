@@ -1,0 +1,31 @@
+# Build tree (single folder; JUCE 9 is fetched into build/_deps)
+/build/
+/out/
+/build-tests/
+/cmake-build-*/
+
+# IDE / OS
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.VC.db
+Thumbs.db
+.DS_Store
+
+# Compiled / packages
+*.obj
+*.o
+*.lib
+*.a
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.vst3
+!**/Source/**
+
+# JUCE FetchContent leftovers if configured in-tree
+/_deps/
