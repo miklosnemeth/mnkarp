@@ -4,13 +4,14 @@
 #include "KarpProcessor.h"
 
 //==============================================================================
-// MnKarpAudioProcessorEditor: a bar with the rack presets and the size, then the two plugin editors one
-// above the other, each under a strip with its on/off switch and a fold arrow, and between them the
-// notes going from mnKord to mnArpee. A switched-off stage stays editable but is dimmed.
+// MnKarpAudioProcessorEditor: a bar with Drag MIDI and the size, then the two plugin editors one above
+// the other, each under a strip with its on/off switch and a fold arrow, and between them the notes going
+// from mnKord to mnArpee. A switched-off stage stays editable. The presets are the plugins' own.
 //
-// The editors are the plugins' own (mnKord's and mnArpee's), so the rack is as tall as the two
+// The editors are the loaded plugins' own (mnKord's and mnArpee's), so the rack is as tall as the two
 // together and follows when one of them changes size (mnArpee's resize corner). The two are always
-// equally wide.
+// equally wide. They are windows of their own on the screen, so nothing of the rack can be drawn over
+// them: the rack's menus open as windows of their own, and a dialog hides the two while it is open.
 //==============================================================================
 class MnKarpAudioProcessorEditor : public juce::AudioProcessorEditor,
                                    private juce::Timer
@@ -20,7 +21,6 @@ public:
     ~MnKarpAudioProcessorEditor() override;
 
     void paint(juce::Graphics&) override;
-    void paintOverChildren(juce::Graphics&) override;
     void resized() override;
 
     // The size of both windows (the zoom of the rack).
@@ -28,7 +28,7 @@ public:
     // Sizes the sections and the rack to the editors inside (done by itself when an editor changes).
     void updateSize();
 
-    // For the tests: the plugin editor of a stage, as it is (not scaled) and on the screen (scaled).
+    // For the tests: the size of the plugin editor of a stage on the screen.
     int getStageEditorWidth(MnKarpAudioProcessor::Stage stage) const;
     juce::Point<int> getStageVisualSize(MnKarpAudioProcessor::Stage stage) const;
     juce::AudioProcessorEditor* getStageEditor(MnKarpAudioProcessor::Stage stage) const;
@@ -72,13 +72,6 @@ private:
         FoldButton() : juce::Button("fold") {}
         void paintButton(juce::Graphics&, bool highlighted, bool down) override;
         bool folded = false;
-    };
-
-    // Over the editor of a switched-off stage; the mouse goes through it.
-    struct Dim : public juce::Component
-    {
-        Dim() { setInterceptsMouseClicks(false, false); }
-        void paint(juce::Graphics& g) override;
     };
 
     // Between the two sections: the notes mnKord gives to mnArpee.
@@ -140,24 +133,28 @@ private:
                     private juce::ComponentListener
     {
     public:
+        // `child` is the stage's plugin, or nullptr when it is not loaded (the section then says why).
         Section(MnKarpAudioProcessorEditor& ownerRef, MnKarpAudioProcessor& processor,
-                MnKarpAudioProcessor::Stage stageIn, juce::AudioProcessor& child, const juce::String& role);
+                MnKarpAudioProcessor::Stage stageIn, juce::AudioProcessor* child, const juce::String& role);
         ~Section() override;
 
         void paint(juce::Graphics&) override;
         void resized() override;
 
-        // The size the section wants: the strip, and the editor's size on the screen (it may be scaled).
+        // The size the section wants: the strip, and the editor's size on the screen.
         int preferredWidth() const;
         int preferredHeight() const;
         juce::Point<int> editorSize() const;
         bool isFolded() const { return rack.isStageFolded(stage); }
         void applyFolded();
-        // Scales the plugin's window (the rack's zoom).
+        // Asks the plugin to scale its window (the rack's zoom).
         void applyZoom(float factor);
-        // The editor's own width (not scaled by the zoom), and a change of it keeping the height.
-        int editorWidth() const { return editor != nullptr ? editor->getWidth() : 0; }
+        // The editor's width on the screen (0 without one), and a change of it keeping the height. The plugin may
+        // keep another width (its limits): editorWidth() then says what it took.
+        int editorWidth() const { return editor != nullptr ? editorSize().x : 0; }
         void setEditorWidth(int width);
+        // Hides the plugin's window while a dialog of the rack is open (it would cover the dialog).
+        void setEditorHidden(bool shouldBeHidden);
         juce::AudioProcessorEditor* getEditor() const { return editor.get(); }
 
         static constexpr int stripHeight = 34;
@@ -174,10 +171,11 @@ private:
         PowerButton power;
         FoldButton fold;
         juce::Component holder;
-        Dim dim;
+        juce::Label missing;   // instead of the editor when the plugin is not loaded
         std::unique_ptr<juce::AudioProcessorEditor> editor;
         std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> powerAttachment;
         bool layingOut = false;
+        bool hidden = false;
     };
 
     void timerCallback() override;
@@ -185,19 +183,6 @@ private:
     void syncWidths();
     void showZoomMenu();
 
-    // Rack presets.
-    void showPresetMenu();
-    void stepPreset(int delta);
-    void saveClicked();
-    void promptName(const juce::String& initial);
-    void saveAs(const juce::String& name);
-    void showSaveFailed();
-    void deleteDialog(const juce::String& name);
-    // Loads a preset, after asking about the unsaved changes of the current one.
-    void loadPresetChecked(const juce::String& name);
-    // Calls proceed() now, or after the user saved or discarded the changes of the current rack preset.
-    void confirmLeavePreset(std::function<void()> proceed);
-    void refreshPresetButton();
     void dragTake();
     void saveTake();
     void showDialog(const juce::String& title, const juce::String& message, bool withField, const juce::String& initialText,
@@ -208,9 +193,7 @@ private:
     RackLookAndFeel lookAndFeel;
     juce::TooltipWindow tooltipWindow { this, 500 };
 
-    juce::ArrowButton prevPresetButton { "previous preset", 0.5f, juce::Colour(0xfff0faf3) };
-    juce::ArrowButton nextPresetButton { "next preset", 0.0f, juce::Colour(0xfff0faf3) };
-    juce::TextButton presetButton, saveButton, zoomButton;
+    juce::TextButton zoomButton;
     TakeButton takeButton { *this };
     std::unique_ptr<juce::FileChooser> fileChooser;
     juce::Rectangle<int> brandArea;
@@ -219,9 +202,7 @@ private:
     FlowBar flowBar;
     juce::Point<int> shownSizes[MnKarpAudioProcessor::numStages];
     bool shownFolded[MnKarpAudioProcessor::numStages] {};
-    juce::String shownPreset { "\n" };
-    bool shownDirty = false;
-    int dirtyTick = 0;
+    int takeTick = 0;
     std::unique_ptr<Dialog> dialog;
     bool syncing = false;
     bool ready = false;   // all sections exist (a section resizing its editor while they are made must not lay out)

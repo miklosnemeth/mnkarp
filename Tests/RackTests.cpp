@@ -1,10 +1,12 @@
-// mnKarp tests: drive the real rack processor (with the real mnKord and mnArpee in it) without a host.
-// Build: -DMNKARP_BUILD_TESTS=ON, target mnKarpTests.
+// mnKarp tests: drive the real rack processor, with the real mnKord.vst3 and mnArpee.vst3 loaded, without a host.
+// Build: -DMNKARP_BUILD_TESTS=ON, target mnKarpTests. The plugins are the ones built next to this repository (see
+// CMakeLists.txt) when they exist, else the installed ones. mnArpee's presets go to a temporary folder.
 
 #include "KarpEditor.h"
 #include "KarpProcessor.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <memory>
 #include <set>
 
@@ -65,42 +67,49 @@ void setStage(MnKarpAudioProcessor& rack, MnKarpAudioProcessor::Stage stage, boo
     rack.getApvts().getParameter(MnKarpAudioProcessor::stageParamId(stage))->setValueNotifyingHost(on ? 1.0f : 0.0f);
 }
 
-// 60 plays the chord 60 64 67 in mnKord, and nothing else is mapped.
-void mapChord(MnKarpAudioProcessor& rack)
+// The host program of mnKord with this name (its programs are its presets).
+int kordProgram(MnKarpAudioProcessor& rack, const juce::String& name)
 {
-    auto& kord = rack.getKord();
-    const juce::ScopedLock lock(kord.getStateLock());
-    auto& preset = kord.getPresets()[(size_t) juce::jmax(0, kord.getActivePresetIndex())];
-    preset.mappings.clear();
-    NoteMapping mapping;
-    mapping.inputNote = 60;
-    mapping.outputNotes = { 60, 64, 67 };
-    preset.mappings.push_back(mapping);
+    auto* kord = rack.getStageProcessor(MnKarpAudioProcessor::kordStage);
+    for (int i = 0; kord != nullptr && i < kord->getNumPrograms(); ++i)
+        if (kord->getProgramName(i) == name)
+            return i;
+    return -1;
 }
 
+// mnKord's "Default" preset: 60 plays the chord 60 64 67 (62 and 64 have chords too).
 std::unique_ptr<MnKarpAudioProcessor> makeRack()
 {
     auto rack = std::make_unique<MnKarpAudioProcessor>();
     rack->prepareToPlay(sampleRate, blockSize);
-    mapChord(*rack);
+    if (auto* kord = rack->getStageProcessor(MnKarpAudioProcessor::kordStage))
+        kord->setCurrentProgram(juce::jmax(0, kordProgram(*rack, "Default")));
     return rack;
 }
 
-// --screenshot <file.png>: renders the window as it is at the start, with a chord held, for the user guide.
-int writeScreenshot(const juce::File& target)
+// One of mnArpee's parameters, by its name.
+juce::AudioProcessorParameter* arpeeParameter(MnKarpAudioProcessor& rack, const juce::String& name)
 {
-    MnKarpAudioProcessor rack;
-    rack.prepareToPlay(sampleRate, blockSize);
-    run(rack, 3, noteOn(60));
+    if (auto* arpee = rack.getStageProcessor(MnKarpAudioProcessor::arpeeStage))
+        for (auto* parameter : arpee->getParameters())
+            if (parameter->getName(64) == name)
+                return parameter;
+    return nullptr;
+}
 
-    std::unique_ptr<juce::AudioProcessorEditor> editor(rack.createEditor());
-    editor->setVisible(true);
-    const auto image = editor->createComponentSnapshot(editor->getLocalBounds(), true, 1.5f);
+void setVariable(const char* variable, const juce::String& value)
+{
+   #if JUCE_WINDOWS
+    _putenv_s(variable, value.toRawUTF8());
+   #else
+    setenv(variable, value.toRawUTF8(), 1);
+   #endif
+}
 
-    target.deleteFile();
-    juce::FileOutputStream stream(target);
-    juce::PNGImageFormat png;
-    return stream.openedOk() && png.writeImageToStream(image, stream) ? 0 : 1;
+void useTestPlugin(const char* variable, const juce::File& file)
+{
+    if (juce::SystemStats::getEnvironmentVariable(variable, {}).isEmpty() && file.exists())
+        setVariable(variable, file.getFullPathName());
 }
 }
 
@@ -109,8 +118,26 @@ int main(int argc, char** argv)
     std::setvbuf(stdout, nullptr, _IONBF, 0);
     juce::ScopedJuceInitialiser_GUI juceInit;
 
-    if (argc == 3 && juce::String(argv[1]) == "--screenshot")
-        return writeScreenshot(juce::File::getCurrentWorkingDirectory().getChildFile(argv[2]));
+    useTestPlugin("MNKARP_MNKORD_VST3", juce::File(MNKARP_TEST_KORD_VST3));
+    useTestPlugin("MNKARP_MNARPEE_VST3", juce::File(MNKARP_TEST_ARPEE_VST3));
+    const auto arpeePresets = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("mnKarpTestArpee");
+    setVariable("MNARPEE_PRESET_DIR", arpeePresets.getFullPathName());
+
+    {
+        MnKarpAudioProcessor rack;
+        std::printf("mnKord:  %s\nmnArpee: %s\n",
+                    MnKarpAudioProcessor::findPlugin(MnKarpAudioProcessor::kordStage).getFullPathName().toRawUTF8(),
+                    MnKarpAudioProcessor::findPlugin(MnKarpAudioProcessor::arpeeStage).getFullPathName().toRawUTF8());
+        check(rack.getStageProcessor(MnKarpAudioProcessor::kordStage) != nullptr, "plugins: mnKord.vst3 is loaded");
+        check(rack.getStageProcessor(MnKarpAudioProcessor::arpeeStage) != nullptr, "plugins: mnArpee.vst3 is loaded");
+        if (rack.getStageProcessor(MnKarpAudioProcessor::kordStage) == nullptr
+            || rack.getStageProcessor(MnKarpAudioProcessor::arpeeStage) == nullptr)
+        {
+            std::printf("%s\n%s\n", rack.getLoadError(MnKarpAudioProcessor::kordStage).toRawUTF8(),
+                        rack.getLoadError(MnKarpAudioProcessor::arpeeStage).toRawUTF8());
+            return 1;
+        }
+    }
 
     {
         auto rack = makeRack();
@@ -125,6 +152,7 @@ int main(int argc, char** argv)
         setStage(*rack, MnKarpAudioProcessor::arpeeStage, false);
         const auto out = run(*rack, 1, noteOn(60));
         check(out.on == std::multiset<int> { 60, 64, 67 }, "mnKord on, mnArpee off: the key plays the chord");
+        check(run(*rack, 1, noteOn(61)).on.empty(), "mnKord on, mnArpee off: a key without a chord plays nothing");
     }
 
     {
@@ -185,10 +213,8 @@ int main(int argc, char** argv)
     {
         auto rack = makeRack();
         std::unique_ptr<juce::AudioProcessorEditor> editor(rack->createEditor());
-        // mnKord is 980 x 456 and mnArpee 900 x 590 at full size; the rack shows them at 75%, with a strip each.
-        check(editor != nullptr && editor->getHeight() > 800 && editor->getHeight() < 1000
-                  && editor->getWidth() >= 700,
-              "editor: both plugin windows at the rack's size");
+        check(editor != nullptr && editor->getHeight() > 300 && editor->getWidth() >= 600,
+              "editor: both plugin windows in the rack");
         std::printf("editor size %d x %d\n", editor->getWidth(), editor->getHeight());
     }
 
@@ -203,21 +229,20 @@ int main(int argc, char** argv)
         const auto before = editor.getStageVisualSize(Rack::kordStage).x;
         check(editor.getStageVisualSize(Rack::arpeeStage).x == before, "widths: equal on the screen too");
 
-        editor.setZoom(0.6f);
-        check(editor.getStageVisualSize(Rack::kordStage).x == editor.getStageVisualSize(Rack::arpeeStage).x
-                  && editor.getStageVisualSize(Rack::kordStage).x < before,
-              "zoom: both windows get smaller together");
-
         auto* arpeeEditor = editor.getStageEditor(Rack::arpeeStage);
-        arpeeEditor->setSize(1200, arpeeEditor->getHeight());
+        arpeeEditor->setSize(before + 120, arpeeEditor->getHeight());
         editor.updateSize();
-        check(editor.getStageEditorWidth(Rack::kordStage) == 1200 && rack->getWidth() == 1200,
+        std::printf("widths after resizing mnArpee: %d %d\n", editor.getStageEditorWidth(Rack::kordStage),
+                    editor.getStageEditorWidth(Rack::arpeeStage));
+        check(editor.getStageEditorWidth(Rack::kordStage) == editor.getStageEditorWidth(Rack::arpeeStage)
+                  && editor.getStageEditorWidth(Rack::kordStage) > before,
               "widths: resizing mnArpee resizes mnKord to match");
 
-        const int kordHeight = editor.getStageEditor(Rack::kordStage)->getHeight();
-        editor.getStageEditor(Rack::kordStage)->setSize(900, kordHeight);
+        auto* kordEditor = editor.getStageEditor(Rack::kordStage);
+        kordEditor->setSize(before + 40, kordEditor->getHeight());
         editor.updateSize();
-        check(editor.getStageEditorWidth(Rack::arpeeStage) == 900, "widths: resizing mnKord resizes mnArpee to match");
+        check(editor.getStageEditorWidth(Rack::arpeeStage) == editor.getStageEditorWidth(Rack::kordStage),
+              "widths: resizing mnKord resizes mnArpee to match");
     }
 
     {
@@ -234,42 +259,22 @@ int main(int argc, char** argv)
     }
 
     {
-        const auto folder = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("mnKarpTestPresets");
-        folder.deleteRecursively();
-        MnKarpAudioProcessor::overridePresetFolder(folder);
-
+        // The rack has no presets of its own: the presets are mnKord's and mnArpee's, kept with the project.
         auto rack = makeRack();
-        setStage(*rack, MnKarpAudioProcessor::arpeeStage, false);
-        check(rack->savePreset("Pad chords"), "presets: save");
-        check(MnKarpAudioProcessor::listPresets() == juce::StringArray { "Pad chords" }, "presets: the list has it");
-        check(rack->getPresetName() == "Pad chords", "presets: it is the current one");
+        check(rack->getNumPrograms() == 1 && rack->getCurrentProgram() == 0, "presets: the rack has no program list");
 
-        // Change everything, then load it back.
-        setStage(*rack, MnKarpAudioProcessor::arpeeStage, true);
-        {
-            auto& kord = rack->getKord();
-            const juce::ScopedLock lock(kord.getStateLock());
-            kord.getPresets()[(size_t) juce::jmax(0, kord.getActivePresetIndex())].mappings.clear();
-        }
-        rack->setZoom(0.7f);
-        check(rack->loadPreset("Pad chords"), "presets: load");
-        check(! rack->isStageOn(MnKarpAudioProcessor::arpeeStage), "presets: the switches come back");
-        check(rack->getZoom() == 0.7f, "presets: the size is not part of a preset");
-        check(run(*rack, 1, noteOn(60)).on == std::multiset<int> { 60, 64, 67 }, "presets: mnKord's chords come back");
+        rack->getStageProcessor(MnKarpAudioProcessor::kordStage)->setCurrentProgram(kordProgram(*rack, "Power Chords"));
+        setStage(*rack, MnKarpAudioProcessor::arpeeStage, false);
+        const auto powerChords = run(*rack, 1, noteOn(60)).on;
+        check(powerChords != std::multiset<int> { 60, 64, 67 }, "presets: mnKord's own preset is played");
+        run(*rack, 1, [] { juce::MidiBuffer m; m.addEvent(juce::MidiMessage::allNotesOff(1), 0); return m; }());
 
         juce::MemoryBlock state;
         rack->getStateInformation(state);
-        MnKarpAudioProcessor other;
-        other.setStateInformation(state.getData(), (int) state.getSize());
-        check(other.getPresetName() == "Pad chords", "presets: the project keeps the preset name");
-
-        check(! rack->loadPreset("No such preset"), "presets: a missing preset does not load");
-        check(rack->deletePreset("Pad chords") && MnKarpAudioProcessor::listPresets().isEmpty()
-                  && rack->getPresetName().isEmpty(),
-              "presets: delete");
-
-        MnKarpAudioProcessor::overridePresetFolder({});
-        folder.deleteRecursively();
+        auto other = makeRack();
+        other->setStateInformation(state.getData(), (int) state.getSize());
+        check(! other->isStageOn(MnKarpAudioProcessor::arpeeStage), "presets: the project keeps the switches");
+        check(run(*other, 1, noteOn(60)).on == powerChords, "presets: the project keeps mnKord's preset");
     }
 
     {
@@ -295,7 +300,7 @@ int main(int argc, char** argv)
             check(findParameter(id) != nullptr, (juce::String("host parameter ") + id).toRawUTF8());
 
         auto* gate = findParameter("arp_gate");
-        auto* source = rack->getArpee().getApvts().getParameter("gate");
+        auto* source = arpeeParameter(*rack, "Gate %");
         check(gate != nullptr && source != nullptr && gate->getName(64) == "mnArpee Gate %",
               "parameters: named after mnArpee's");
 
@@ -308,93 +313,16 @@ int main(int argc, char** argv)
         check(std::abs(gate->getValue() - 0.5f) < 1.0e-6f, "parameters: mnArpee's own change shows in the host's value");
         check(counter.changes == 1, "parameters: the host is told once about mnArpee's change");
 
-        // The same through a rack preset: the loaded value reaches the host.
-        const auto folder = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("mnKarpTestParams");
-        folder.deleteRecursively();
-        MnKarpAudioProcessor::overridePresetFolder(folder);
+        // The same through a project: the restored value reaches the host.
         source->setValueNotifyingHost(0.25f);
-        rack->savePreset("Gate 25");
-        source->setValueNotifyingHost(0.9f);
-        counter.changes = 0;
-        rack->loadPreset("Gate 25");
-        check(std::abs(gate->getValue() - source->getValue()) < 1.0e-6f && counter.changes > 0,
-              "parameters: a loaded preset is shown to the host");
-        rack->removeListener(&counter);
-        MnKarpAudioProcessor::overridePresetFolder({});
-        folder.deleteRecursively();
-    }
-
-    {
-        // The host's program list is the list of the rack presets, oldest first.
-        const auto folder = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("mnKarpTestPrograms");
-        folder.deleteRecursively();
-        MnKarpAudioProcessor::overridePresetFolder(folder);
-
-        auto rack = makeRack();
-        check(rack->getNumPrograms() == 128 && rack->getProgramName(0) == "-", "programs: 128 slots, empty ones are \"-\"");
-
-        setStage(*rack, MnKarpAudioProcessor::arpeeStage, false);
-        rack->savePreset("Zebra");
-        juce::Thread::sleep(40);
-        setStage(*rack, MnKarpAudioProcessor::arpeeStage, true);
-        rack->savePreset("Apple");
-
-        check(rack->getProgramName(0) == "Zebra" && rack->getProgramName(1) == "Apple" && rack->getProgramName(2) == "-",
-              "programs: the presets, oldest first");
-        check(rack->getCurrentProgram() == 1, "programs: the current one is the last saved");
-
-        rack->setCurrentProgram(0);
-        check(rack->getPresetName() == "Zebra" && ! rack->isStageOn(MnKarpAudioProcessor::arpeeStage),
-              "programs: choosing a program loads the preset");
-        check(rack->getCurrentProgram() == 0, "programs: and it is the current one");
-
-        rack->setCurrentProgram(50);
-        check(rack->getPresetName() == "Zebra", "programs: an empty slot changes nothing");
-
-        // A preset file copied in from outside shows up after a refresh.
-        folder.getChildFile("Zebra.mnkarp").copyFileTo(folder.getChildFile("Copy.mnkarp"));
-        rack->refreshProgramList();
-        check(rack->getProgramName(2) == "Copy", "programs: a file added from outside is listed");
-
-        MnKarpAudioProcessor::overridePresetFolder({});
-        folder.deleteRecursively();
-    }
-
-    {
-        // Unsaved changes of a rack preset.
-        const auto folder = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("mnKarpTestDirty");
-        folder.deleteRecursively();
-        MnKarpAudioProcessor::overridePresetFolder(folder);
-
-        auto rack = makeRack();
-        check(! rack->isPresetDirty(), "dirty: no preset, nothing to save");
-        rack->savePreset("Dirty test");
-        check(! rack->isPresetDirty(), "dirty: not after saving");
-        setStage(*rack, MnKarpAudioProcessor::arpeeStage, false);
-        check(rack->isPresetDirty(), "dirty: a switch changed");
-        rack->savePreset("Dirty test");
-        check(! rack->isPresetDirty(), "dirty: saved again");
-        rack->setZoom(0.6f);
-        check(! rack->isPresetDirty(), "dirty: the size is not a change of the preset");
-        rack->getArpee().getApvts().getParameter("gate")->setValueNotifyingHost(0.1f);
-        check(rack->isPresetDirty(), "dirty: an mnArpee value changed");
-        rack->loadPreset("Dirty test");
-        check(! rack->isPresetDirty(), "dirty: not after loading");
-
         juce::MemoryBlock state;
         rack->getStateInformation(state);
-        MnKarpAudioProcessor other;
-        other.setStateInformation(state.getData(), (int) state.getSize());
-        check(other.getPresetName() == "Dirty test" && ! other.isPresetDirty(), "dirty: a project with the saved preset");
-        setStage(other, MnKarpAudioProcessor::kordStage, false);
-        juce::MemoryBlock edited;
-        other.getStateInformation(edited);
-        MnKarpAudioProcessor third;
-        third.setStateInformation(edited.getData(), (int) edited.getSize());
-        check(third.isPresetDirty(), "dirty: a project with edits after the save shows them as unsaved");
-
-        MnKarpAudioProcessor::overridePresetFolder({});
-        folder.deleteRecursively();
+        source->setValueNotifyingHost(0.9f);
+        counter.changes = 0;
+        rack->setStateInformation(state.getData(), (int) state.getSize());
+        check(std::abs(gate->getValue() - 0.25f) < 1.0e-3f && counter.changes > 0,
+              "parameters: a restored project is shown to the host");
+        rack->removeListener(&counter);
     }
 
     {

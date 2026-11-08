@@ -1,7 +1,8 @@
 # mnKarp
 
-**mnKarp** is a rack of two MIDI effects in one plugin: **mnKord** (a key plays a chord) above **mnArpee**
-(the chord is played as a pattern). Each of the two can be switched off, and then the MIDI passes it untouched.
+**mnKarp** is a rack for two MIDI effects: it loads the installed **mnKord** (a key plays a chord) and, under it, **mnArpee**
+(the chord is played as a pattern), and runs the MIDI through them. Each of the two can be switched off, and then the MIDI
+passes it untouched. mnKord (1.7.0 or later) and mnArpee must be installed: mnKarp finds them in the VST3 folder.
 Built with [JUCE](https://juce.com) 9 as **VST3** and **Standalone**.
 
 ```
@@ -13,24 +14,20 @@ MIDI in -> [ mnKord ] -> [ mnArpee ] -> MIDI out
 
 - Put mnKarp on an instrument track, like mnKord or mnArpee: its MIDI output feeds the next device.
 - Each section has a round **power switch** at the left of its strip. It is a host parameter (`mnKord On`,
-  `mnArpee On`), so it can be automated or mapped to a controller. A switched-off section is dimmed and can still be edited.
+  `mnArpee On`), so it can be automated or mapped to a controller. A switched-off section can still be edited.
 - Switching a section off releases what it is sounding (the chord, the arpeggio), so no note hangs.
-- The top bar has the **rack presets** (previous / next, the name menu with Save as, Delete and Show the preset folder, Save) and
-  the size button (75% to start with), which sets the size of both windows, 60% to 115%; it is kept with the project.
-  A rack preset holds the current presets of mnKord and mnArpee and the two switches (not the size); the files are in
-  `Documents\MNAudio\mnKarp\Presets`.
+- The top bar has the size button (75% to start with), which sets the size of both windows, 60% to 115%; it is kept with the
+  project. The rack has no presets of its own: choose the presets in mnKord's and mnArpee's windows.
 - The line between the two windows shows the notes that mnKord gives to mnArpee, live.
 - **Drag MIDI** (top bar): drag the last take into the DAW as a MIDI clip (on the bar it started on, with its tempo), or click to
-  save it as a `.mid` file. A green dot by the rack preset's name marks unsaved changes; the questions open inside the window.
+  save it as a `.mid` file.
 - The two windows are always equally wide: resize one (mnArpee has a resize corner) and the other follows.
 - The arrow at the right of a strip **folds** the section's window away, to make the rack shorter.
-- mnKord has **one keyboard** in the rack: choose the trigger key in the lane above the keys (red), and click the keys to edit
-  its chord (green); the keys being played and the sounding notes are marked too.
-- The windows are the plugins' own: presets, the preset libraries (`Documents\MNAudio\mnKord`, `...\mnArpee`),
+- The windows are the installed plugins' own (mnKord with its TRIGGER lane and one keyboard): presets, the preset libraries (`Documents\MNAudio\mnKord`, `...\mnArpee`),
   Undo / Redo and mnArpee's zoom and resize corner work as in the single plugins. The project keeps the state of both.
 
 In the host: the two switches and mnArpee's parameters (rate, octave, gate, swing, steps, latch, group, cut) are host parameters
-(`mnKord On`, `mnArpee On`, `mnArpee ...`), and the host's program list is the list of the rack presets (128 slots, oldest first).
+(`mnKord On`, `mnArpee On`, `mnArpee ...`). The rack has a single host program (the presets are the plugins' own).
 The order of the stages is fixed.
 
 ## Home page
@@ -40,9 +37,10 @@ stylesheet (`site/site.css`); never edit them by hand.
 
 ## How it is built
 
-mnKarp builds on its own. `Source/Kord` and `Source/Arpee` are copies of mnKord and mnArpee, changed for the rack (mnKord has one
-keyboard here); `Source/ORIGIN.md` says from which commits. `Source/KarpProcessor.*` is the rack (it owns one `MnKordAudioProcessor`
-and one `MnArpeeAudioProcessor` and runs the MIDI through them), `Source/KarpEditor.*` the window around the two.
+mnKarp has none of the code of mnKord and mnArpee: it is a small VST3 host. `Source/KarpProcessor.*` is the rack: it finds
+`mnKord.vst3` and `mnArpee.vst3` (the environment variables `MNKARP_MNKORD_VST3` and `MNKARP_MNARPEE_VST3`, else the VST3 folder:
+its `MNAudio` folder, the folder itself, then anywhere below it), loads them with JUCE's VST3 hosting and runs the MIDI through
+them. `Source/KarpEditor.*` is the window around the two plugin windows.
 
 ## Build (Windows)
 

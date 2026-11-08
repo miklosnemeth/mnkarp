@@ -48,7 +48,7 @@ T = {
         "locale": "en_US", "dir": "", "base": "",
         "title": "mnKarp – free chord + arpeggiator rack plugin (VST3) for Windows",
         "description": "mnKarp is a free MIDI rack plugin (VST3) for Windows: mnKord turns one key into a chord, mnArpee "
-                       "plays it as a pattern, each with an on/off switch. Rack presets, automation, drag the result into your DAW.",
+                       "plays it as a pattern, each with an on/off switch. Automation, drag the result into your DAW.",
         "og_alt": "The mnKarp window: mnKord above mnArpee",
         "skip": "Skip to the content",
         "nav": [("#features", "Features"), ("#faq", "FAQ"), ("#get", "Get it")],
@@ -61,7 +61,7 @@ T = {
         "cta_download": "Download for Windows", "cta_guide": "User guide (PDF)", "cta_source": "Source on GitHub",
         "pdf": "mnKarp-User-Guide.pdf",
         "facts": ["v{version}", "VST3 · Windows x64", "Free and open source (AGPL-3.0)"],
-        "main_alt": "The mnKarp window: the rack presets on top, mnKord's keyboards, the notes between, mnArpee's pattern grid",
+        "main_alt": "The mnKarp window: mnKord's keyboard on top, the notes between, mnArpee's pattern grid",
         "how_h": "How it works",
         "how_sub": "mnKarp is a MIDI effect: it makes no sound itself, it sits in front of your synth.",
         "steps": [("Play one key", "Your MIDI keyboard sends a single note."),
@@ -71,7 +71,7 @@ T = {
         "feat_sub": "mnKord and mnArpee, with what a rack adds.",
         "cards": [
             ("On/off for each", "A power switch on each stage. Off, the MIDI passes it untouched, and nothing it played is left hanging."),
-            ("Rack presets", "Both plugins' presets and the two switches under one name. They are also the DAW's program list."),
+            ("Their own presets", "mnKord's and mnArpee's presets and libraries, chosen in their windows; the project keeps both."),
             ("Automation", "The switches and mnArpee's rate, gate, swing, octave, steps, latch, group and cut are host parameters."),
             ("Drag MIDI", "Drag the last thing you played into the DAW as a MIDI clip, on the bar it started on."),
             ("One keyboard for chords", "Pick the trigger key in the lane above the keys, click the chord notes on the same keyboard. Colours tell them apart."),
@@ -82,22 +82,19 @@ T = {
         "feature_groups": [
             ("The rack", [
                 "mnKord (chords) above mnArpee (arpeggiator): the MIDI goes through mnKord, then mnArpee.",
-                "A power switch for each stage; a stage that is off is dimmed and still editable.",
+                "A power switch for each stage; a stage that is off passes the MIDI and is still editable.",
                 "Switching a stage off releases the notes it is sounding.",
                 "Fold a stage's window away; the project remembers it.",
                 "One size for both windows, from 60% to 115%; both are always equally wide.",
                 "The notes between the two stages, live.",
             ]),
-            ("Presets and the DAW", [
-                "Rack presets: both plugins' presets and the switches under one name, shared by every project.",
-                "Previous / next, Save, Save as, Revert, Delete; a dot shows unsaved changes.",
-                "The DAW's program list is the list of the rack presets (128 slots, oldest first).",
+            ("In the DAW", [
                 "Host parameters: the two switches and mnArpee's eight values, for automation and MIDI controllers.",
                 "Drag MIDI: the last take as a MIDI clip (with its tempo, starting on a bar), or save it as a file.",
             ]),
             ("Inside", [
-                "mnKord and mnArpee: their presets, libraries, browsers and Undo / Redo work as in the single plugins.",
-                "mnKord with one keyboard: the trigger keys in a lane above it, the chord notes on the keys, told apart by colour.",
+                "The installed mnKord and mnArpee plugins themselves: their windows, presets, libraries, browsers and Undo / Redo.",
+                "An update of mnKord or mnArpee updates the rack too.",
                 "The notes mnKord hands to mnArpee, shown live between the two.",
                 "mnKord's and mnArpee's preset libraries are shared with the single plugins.",
                 "The project keeps the full state of both stages.",
@@ -128,7 +125,7 @@ T = {
         "locale": "hu_HU", "dir": "hu/", "base": "../",
         "title": "mnKarp – ingyenes akkord + arpeggiátor rack plugin (VST3) Windowsra",
         "description": "Az mnKarp ingyenes MIDI rack plugin (VST3) Windowsra: az mnKord egy billentyűből akkordot csinál, az mnArpee "
-                       "mintában játssza, mindkettő kikapcsolható. Rack presetek, automatizálás, a végeredmény áthúzható a DAW-ba.",
+                       "mintában játssza, mindkettő kikapcsolható. Automatizálás, a végeredmény áthúzható a DAW-ba.",
         "og_alt": "Az mnKarp ablaka: felül az mnKord, alatta az mnArpee",
         "skip": "Ugrás a tartalomra",
         "nav": [("#features", "Funkciók"), ("#faq", "Kérdések"), ("#get", "Letöltés")],
@@ -141,7 +138,7 @@ T = {
         "cta_download": "Letöltés Windowsra", "cta_guide": "Útmutató (PDF)", "cta_source": "Forráskód a GitHubon",
         "pdf": "mnKarp-Felhasznaloi-utmutato.pdf",
         "facts": ["v{version}", "VST3 · Windows x64", "Ingyenes, nyílt forrású (AGPL-3.0)"],
-        "main_alt": "Az mnKarp ablaka: felül a rack presetek, az mnKord billentyűi, a köztes hangok, az mnArpee mintarácsa",
+        "main_alt": "Az mnKarp ablaka: felül az mnKord billentyűzete, a köztes hangok, az mnArpee mintarácsa",
         "how_h": "Hogyan működik",
         "how_sub": "Az mnKarp MIDI-effekt: maga nem szól, a szintid elé kerül.",
         "steps": [("Lenyomsz egy billentyűt", "A MIDI-billentyűzet egyetlen hangot küld."),
@@ -151,7 +148,7 @@ T = {
         "feat_sub": "Az mnKord és az mnArpee, és amit a rack hozzátesz.",
         "cards": [
             ("Be/ki mindkettőre", "Mindkét fokozaton kapcsoló. Kikapcsolva a MIDI érintetlenül átmegy, és nem ragad be hang."),
-            ("Rack presetek", "A két plugin presetje és a két kapcsoló egy név alatt. Ez a DAW programlistája is."),
+            ("Saját presetjeik", "Az mnKord és az mnArpee presetjei és könyvtárai, az ablakaikban választva; a projekt mindkettőt megtartja."),
             ("Automatizálás", "A kapcsolók és az mnArpee rate, gate, swing, octave, steps, latch, group és cut értéke host-paraméter."),
             ("MIDI áthúzás", "Az utoljára játszott részt MIDI-klipként behúzhatod a DAW-ba, az ütem elejére igazítva."),
             ("Egy billentyűzet az akkordokhoz", "A triggert a billentyűk fölötti sávban választod, az akkordhangokat ugyanazon a billentyűzeten kattintod. A színek különválasztják őket."),
@@ -162,22 +159,19 @@ T = {
         "feature_groups": [
             ("A rack", [
                 "Felül az mnKord (akkordok), alatta az mnArpee (arpeggiátor): a MIDI előbb az mnKordon, aztán az mnArpee-n megy át.",
-                "Kapcsoló mindkét fokozatra; a kikapcsolt fokozat halvány, de szerkeszthető.",
+                "Kapcsoló mindkét fokozatra; a kikapcsolt fokozat átengedi a MIDI-t, és szerkeszthető marad.",
                 "Kikapcsoláskor a fokozat felengedi a hangjait.",
                 "A fokozat ablaka összecsukható; a projekt megjegyzi.",
                 "Egy méret mindkét ablakra, 60 és 115% között; a kettő mindig egyforma széles.",
                 "A két fokozat közötti hangok, élőben.",
             ]),
-            ("Presetek és a DAW", [
-                "Rack presetek: a két plugin presetje és a kapcsolók egy név alatt, minden projekt közösen használja.",
-                "Előző / következő, Save, Save as, Revert, Delete; egy pötty jelzi a nem mentett változást.",
-                "A DAW programlistája a rack presetek listája (128 hely, a legrégebbitől kezdve).",
+            ("A DAW-ban", [
                 "Host-paraméterek: a két kapcsoló és az mnArpee nyolc értéke, automatizáláshoz és kontrollerhez.",
                 "MIDI áthúzás: az utolsó rész MIDI-klipként (tempóval, ütem elejéről), vagy fájlba mentve.",
             ]),
             ("Belül", [
-                "Az mnKord és az mnArpee: a presetjeik, könyvtáraik, böngészőik és az Undo / Redo ugyanúgy működik, mint külön.",
-                "Az mnKord egy billentyűzettel: fölötte a trigger-sáv, a billentyűkön az akkordhangok, színekkel megkülönböztetve.",
+                "A telepített mnKord és mnArpee plugin maga: az ablakaik, presetjeik, könyvtáraik, böngészőik és az Undo / Redo.",
+                "Az mnKord vagy az mnArpee frissítése a rackot is frissíti.",
                 "Az mnKord által az mnArpee-nak átadott hangok élőben, a kettő között.",
                 "Az mnKord és az mnArpee presetkönyvtára közös az önálló pluginokéval.",
                 "A projekt mindkét fokozat teljes állapotát megtartja.",
@@ -209,8 +203,8 @@ T = {
 FAQ = {
     "en": [
         ("Is mnKarp free?", "Yes. It is free and open source under the AGPL-3.0, with no account and no copy protection."),
-        ("Do I need mnKord and mnArpee too?", "No. mnKarp has both inside. If you have them, the three work side by side and share the "
-                                              "preset libraries of mnKord and mnArpee."),
+        ("Do I need mnKord and mnArpee too?", "Yes. mnKarp is a rack that loads the installed mnKord.vst3 (1.7.0 or later) and mnArpee.vst3, "
+                                              "with their windows and preset libraries. Install both first."),
         ("Why is there no sound?", "mnKarp is a MIDI effect: put a synth or a sampler after it on the same instrument track."),
         ("Can I automate the arpeggiator?", "Yes. mnArpee's rate, octave, gate, swing, steps, latch, group and cut, and the two on/off "
                                            "switches, are host parameters."),
@@ -220,8 +214,8 @@ FAQ = {
     ],
     "hu": [
         ("Ingyenes az mnKarp?", "Igen. Ingyenes és nyílt forrású (AGPL-3.0), regisztráció és másolásvédelem nélkül."),
-        ("Kell hozzá az mnKord és az mnArpee is?", "Nem. Az mnKarp mindkettőt tartalmazza. Ha megvannak, a három egymás mellett "
-                                                   "működik, és közösen használják az mnKord és az mnArpee presetkönyvtárát."),
+        ("Kell hozzá az mnKord és az mnArpee is?", "Igen. Az mnKarp egy rack, amely a telepített mnKord.vst3-at (legalább 1.7.0) és "
+                                                   "mnArpee.vst3-at tölti be, az ablakaikkal és a presetkönyvtáraikkal. Előbb mindkettőt telepítsd."),
         ("Miért nem szól?", "Az mnKarp MIDI-effekt: tegyél utána egy szintit vagy samplert ugyanarra a hangszersávra."),
         ("Automatizálható az arpeggiátor?", "Igen. Az mnArpee rate, octave, gate, swing, steps, latch, group és cut értéke és a két "
                                             "kapcsoló host-paraméter."),
