@@ -47,3 +47,23 @@ Source: "..\docs\mnKarp-Felhasznaloi-utmutato.pdf"; DestDir: "{app}\Docs"; Flags
 [Icons]
 Name: "{autoprograms}\MNAudio\mnKarp user guide"; Filename: "{app}\Docs\mnKarp-User-Guide.pdf"
 Name: "{autoprograms}\MNAudio\mnKarp felhasznaloi utmutato"; Filename: "{app}\Docs\mnKarp-Felhasznaloi-utmutato.pdf"
+
+[Code]
+// mnKarp loads the installed mnKord and mnArpee: say so at the end when one of them is not in the VST3 folder.
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  Missing: String;
+begin
+  if CurStep <> ssPostInstall then
+    Exit;
+  if not DirExists(ExpandConstant('{commoncf64}\VST3\MNAudio\mnKord.vst3'))
+     and not DirExists(ExpandConstant('{commoncf64}\VST3\mnKord.vst3')) then
+    Missing := Missing + '  mnKord (1.7.0 or later)' + #13#10;
+  if not DirExists(ExpandConstant('{commoncf64}\VST3\MNAudio\mnArpee.vst3'))
+     and not DirExists(ExpandConstant('{commoncf64}\VST3\mnArpee.vst3')) then
+    Missing := Missing + '  mnArpee' + #13#10;
+  if Missing <> '' then
+    SuppressibleMsgBox('mnKarp is a rack that loads mnKord and mnArpee. Install these too:' + #13#10 + #13#10 + Missing
+                       + #13#10 + 'Their installers are on github.com/miklosnemeth (mnkord and mnArpee).',
+                       mbInformation, MB_OK, IDOK);
+end;

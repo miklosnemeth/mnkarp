@@ -2,24 +2,25 @@
 
 **English** · [Magyar](USER_GUIDE.hu.md)
 
-mnKarp is a rack of two MIDI effects in one plugin: **mnKord** (one key plays a chord) above **mnArpee** (the notes are
-played as a pattern). The MIDI goes through mnKord first and then through mnArpee, and each of the two can be switched off.
+mnKarp is a rack for two MIDI effects: it loads **mnKord** (one key plays a chord) and, under it, **mnArpee** (the notes are
+played as a pattern), the plugins you have installed. The MIDI goes through mnKord first and then through mnArpee, and each of the two can be switched off.
 
 ```
 MIDI in -> [ mnKord ] -> [ mnArpee ] -> MIDI out
               on/off        on/off
 ```
 
-The two windows are mnKord and mnArpee, so their user guides (the pattern grid, the preset browsers, chord symbols, scales,
-Undo / Redo) apply here too. One thing is different: mnKord has **one keyboard** in the rack instead of the INPUT and CHORD
-keyboards (see below). This guide is about what the rack adds.
+The two windows are the windows of mnKord and mnArpee themselves, so their user guides (the pattern grid, the preset browsers,
+chord symbols, scales, Undo / Redo) apply here too. This guide is about what the rack adds.
 
 ## Installing
 
 Run `mnKarp-<version>-win-x64-setup.exe`. It installs the VST3 to `Common Files\VST3\MNAudio\mnKarp.vst3`, which every DAW
-scans, and this guide to `Program Files\MNAudio\mnKarp`. Close your DAW first if it has mnKarp loaded. mnKord and mnArpee
-do not have to be installed: mnKarp has both inside. If you have them, the three work side by side and share their preset
-libraries.
+scans, and this guide to `Program Files\MNAudio\mnKarp`. Close your DAW first if it has mnKarp loaded.
+
+**mnKord and mnArpee must be installed too** (mnKord 1.7.0 or later, for its single keyboard): mnKarp loads them from the VST3
+folder (`Common Files\VST3\MNAudio`, or anywhere in `Common Files\VST3`). When one of them is missing, its section says so and
+the MIDI passes it; the installer warns too. An update of mnKord or mnArpee is an update of the rack as well.
 
 ## Using it in a DAW
 
@@ -33,36 +34,16 @@ the next device, a synth or a sampler. It makes no sound itself.
 From top to bottom:
 
 - **The top bar.** The title and the version, the rack presets in the middle, then **Drag MIDI** and the size button at the right.
-- **The mnKord section.** A strip with the power switch, the name and the fold arrow, and under it mnKord's window.
+- **The mnKord section.** A strip with the power switch, the name and the fold arrow, and under it mnKord's window (its
+  **TRIGGER** lane and keyboard are described in mnKord's guide).
 - **The note line.** The notes that mnKord gives to mnArpee, live: when you press a key you see the chord here. It is a quick way to
   hear with your eyes what the first stage does.
 - **The mnArpee section.** Its strip and mnArpee's window.
 
-### mnKord's keyboard
-
-In the rack mnKord has a single keyboard, with a **trigger lane** right above the keys:
-
-- **The trigger lane** has a small cell over every key (the black keys' cells in its upper half, the white keys' in the lower half).
-  Click a cell to choose that key as the **trigger key**: the key you play to get the chord. Right-click it for the chord templates.
-  Keys that already have a chord have a pale red cell; the selected one is bright red with a white frame. With a scale chosen, only
-  the keys of the scale have a cell.
-- **The keys** edit the chord of the selected trigger key: click a key to add or remove that chord note, drag a chord note up or down
-  to set its velocity, right-click to invert the chord.
-
-| Colour | Means |
-|--------|-------|
-| green key | a note of the selected chord (with its degree: R, 3, 5, ...) |
-| red key | the selected trigger key (a red band on top when it is also a chord note) |
-| red band at the top of a key | a key you are playing on your controller |
-| orange band at the bottom of a key | a chord note that is sounding |
-
-The row above the lane has the trigger key's name, the velocity layer, Learn, Copy up / down and the scale; the row under the keys
-the chord's name and the field for typing a chord symbol.
-
 ### Switching a stage off
 
 The round **power switch** at the left of a strip switches the stage off or on. A stage that is off does nothing: the MIDI goes
-through it untouched. Its window is dimmed, with the words "OFF - the MIDI passes through" in the strip, and can still be edited.
+through it untouched. The strip says "OFF - the MIDI passes through", and the window can still be edited.
 
 | mnKord | mnArpee | What you get |
 |--------|---------|--------------|
@@ -85,7 +66,8 @@ The **size button** in the top bar (75% to start with) sets the size of both win
 about 950 pixels high; if it does not fit your screen, choose a smaller size.
 
 The two windows are **always equally wide**. mnArpee's window can be resized with the corner at its bottom right, and mnKord's window
-follows it, and the other way round. The size and the width are kept with the project.
+follows it, and the other way round (mnKord's window takes any width from 848 to 1600 pixels at 100%). The size and the width are
+kept with the project.
 
 ## Rack presets
 
@@ -101,7 +83,7 @@ In the top bar:
 
 A green dot at the left of the name means the rack has changed since the preset was loaded or saved (a switch, or a preset or a value in
 one of the two plugins; the size does not count). Choosing another preset then asks first: **Save**, **Discard** or **Cancel**. The
-questions open inside the plugin window.
+questions open inside the rack's window, which hides the two plugin windows while a question is open.
 
 The presets are files (`.mnkarp`) in `Documents\MNAudio\mnKarp\Presets`, shared by every project and every instance of mnKarp. Copy
 them to another computer to take them with you. A rack preset stores the *content* of the two presets, so it plays the same even

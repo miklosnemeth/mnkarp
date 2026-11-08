@@ -22,16 +22,27 @@ MnKarpAudioProcessor::MnKarpAudioProcessor()
         folded[(size_t) stage].store(false);
     }
 
-    arpee.setZoom(defaultZoom);
+    loadPlugins();
 
-    // mnArpee's own parameters, so that the host can automate them (the rack owns the mirrors, mnArpee the source).
-    for (const char* id : { "rate", "octave", "gate", "swing", "steps", "latch", "group", "cut" })
-        if (auto* source = dynamic_cast<juce::RangedAudioParameter*>(arpee.getApvts().getParameter(id)))
-        {
-            auto* mirror = new MirrorParameter(*source, "arp_", "mnArpee ");
-            mirrors.push_back(mirror);
-            addParameter(mirror);
-        }
+    // mnArpee's own parameters, so that the host can automate them (the rack owns the mirrors, mnArpee the
+    // source). They are found by name; the IDs are the ones mnKarp 1.0 had, so automation in projects is kept.
+    // Without mnArpee they are still there (the host's parameter list must not change), and do nothing.
+    static constexpr std::pair<const char*, const char*> arpeeParameters[] = {
+        { "rate", "Rate" }, { "octave", "Octave" }, { "gate", "Gate %" }, { "swing", "Swing %" },
+        { "steps", "Steps" }, { "latch", "Latch" }, { "group", "Group octaves" }, { "cut", "Cut on release" } };
+
+    for (const auto& [id, name] : arpeeParameters)
+    {
+        juce::AudioProcessorParameter* source = nullptr;
+        if (auto* arpee = getStageProcessor(arpeeStage))
+            for (auto* parameter : arpee->getParameters())
+                if (parameter->getName(64) == name)
+                    source = parameter;
+
+        auto* mirror = new MirrorParameter(source, juce::String("arp_") + id, juce::String("mnArpee ") + name);
+        mirrors.push_back(mirror);
+        addParameter(mirror);
+    }
 
     refreshProgramList();
     startTimerHz(10);
@@ -48,14 +59,73 @@ MnKarpAudioProcessor::~MnKarpAudioProcessor()
 }
 
 //==============================================================================
+juce::File MnKarpAudioProcessor::findPlugin(Stage stage)
+{
+    const juce::String name = stageName(stage);
+
+    const auto variable = juce::SystemStats::getEnvironmentVariable("MNKARP_" + name.toUpperCase() + "_VST3", {});
+    if (variable.isNotEmpty())
+        return juce::File(variable).exists() ? juce::File(variable) : juce::File();
+
+    const auto fileName = name + ".vst3";
+    juce::VST3PluginFormat format;
+    const auto folders = format.getDefaultLocationsToSearch();
+    for (int i = 0; i < folders.getNumPaths(); ++i)
+    {
+        const auto folder = folders[i];
+        for (const auto& candidate : { folder.getChildFile("MNAudio").getChildFile(fileName), folder.getChildFile(fileName) })
+            if (candidate.exists())
+                return candidate;
+
+        for (const auto& entry : juce::RangedDirectoryIterator(folder, true, "*.vst3",
+                                                               juce::File::findFilesAndDirectories))
+            if (entry.getFile().getFileName().equalsIgnoreCase(fileName))
+                return entry.getFile();
+    }
+    return {};
+}
+
+void MnKarpAudioProcessor::loadPlugins()
+{
+    formats.addFormat(std::make_unique<juce::VST3PluginFormat>());
+
+    for (const auto stage : { kordStage, arpeeStage })
+    {
+        const juce::String name = stageName(stage);
+        const auto file = findPlugin(stage);
+        if (file == juce::File())
+        {
+            loadErrors[(size_t) stage] = name + ".vst3 was not found. Install " + name
+                                         + " (its installer puts it into the VST3 folder), then open mnKarp again.";
+            continue;
+        }
+
+        juce::OwnedArray<juce::PluginDescription> types;
+        juce::VST3PluginFormat().findAllTypesForFile(types, file.getFullPathName());
+
+        juce::String error;
+        for (auto* type : types)
+            if (plugins[(size_t) stage] == nullptr && type->name.equalsIgnoreCase(name))
+                plugins[(size_t) stage] = formats.createPluginInstance(*type, 44100.0, 512, error);
+
+        if (plugins[(size_t) stage] == nullptr)
+            loadErrors[(size_t) stage] = name + " could not be loaded from " + file.getFullPathName()
+                                         + (error.isNotEmpty() ? ": " + error : juce::String("."));
+    }
+}
+
+//==============================================================================
 void MnKarpAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
-    for (juce::AudioProcessor* child : { static_cast<juce::AudioProcessor*>(&kord),
-                                         static_cast<juce::AudioProcessor*>(&arpee) })
-    {
-        child->setRateAndBufferSizeDetails(sampleRate, samplesPerBlock);
-        child->prepareToPlay(sampleRate, samplesPerBlock);
-    }
+    int channels = 0;
+    for (auto& plugin : plugins)
+        if (plugin != nullptr)
+        {
+            plugin->setRateAndBufferSizeDetails(sampleRate, samplesPerBlock);
+            plugin->prepareToPlay(sampleRate, samplesPerBlock);
+            channels = juce::jmax(channels, plugin->getTotalNumInputChannels(), plugin->getTotalNumOutputChannels());
+        }
+    stageAudio.setSize(channels, samplesPerBlock);
 
     releaseBuffer.ensureSize(16384);
     wasOn = { true, true };
@@ -63,20 +133,28 @@ void MnKarpAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 
 void MnKarpAudioProcessor::releaseResources()
 {
-    kord.releaseResources();
-    arpee.releaseResources();
+    for (auto& plugin : plugins)
+        if (plugin != nullptr)
+            plugin->releaseResources();
 }
 
-template <typename Processor>
-void MnKarpAudioProcessor::runStage(Stage stage, Processor& processor, juce::AudioBuffer<float>& audio,
-                                    juce::MidiBuffer& midi)
+void MnKarpAudioProcessor::runStage(Stage stage, int numSamples, juce::MidiBuffer& midi)
 {
+    auto* processor = plugins[(size_t) stage].get();
+    if (processor == nullptr)
+        return;
+
     const bool on = isStageOn(stage);
     bool& was = wasOn[(size_t) stage];
 
+    // The plugins have no audio, but get a (silent) buffer of the block's length for their buses.
+    juce::AudioBuffer<float> audio(stageAudio.getArrayOfWritePointers(), stageAudio.getNumChannels(),
+                                   juce::jmin(numSamples, stageAudio.getNumSamples()));
+    audio.clear();
+
     if (on)
     {
-        processor.processBlock(audio, midi);
+        processor->processBlock(audio, midi);
     }
     else if (was)
     {
@@ -87,8 +165,8 @@ void MnKarpAudioProcessor::runStage(Stage stage, Processor& processor, juce::Aud
         for (int channel = 1; channel <= 16; ++channel)
             releaseBuffer.addEvent(juce::MidiMessage::allNotesOff(channel), 0);
 
-        processor.processBlock(audio, releaseBuffer);
-        releaseBuffer.addEvents(midi, 0, audio.getNumSamples(), 0);
+        processor->processBlock(audio, releaseBuffer);
+        releaseBuffer.addEvents(midi, 0, numSamples, 0);
         midi.swapWith(releaseBuffer);
     }
 
@@ -99,13 +177,14 @@ void MnKarpAudioProcessor::processBlock(juce::AudioBuffer<float>& audio, juce::M
 {
     juce::ScopedNoDenormals noDenormals;
 
-    // The children are not hosted by anyone: the rack hands them the host's transport.
-    kord.setPlayHead(getPlayHead());
-    arpee.setPlayHead(getPlayHead());
+    // The rack hands the plugins the host's transport (mnArpee follows the song position).
+    for (auto& plugin : plugins)
+        if (plugin != nullptr)
+            plugin->setPlayHead(getPlayHead());
 
-    runStage(kordStage, kord, audio, midi);
+    runStage(kordStage, audio.getNumSamples(), midi);
     trackNotes(kordStage, midi);
-    runStage(arpeeStage, arpee, audio, midi);
+    runStage(arpeeStage, audio.getNumSamples(), midi);
     trackNotes(arpeeStage, midi);
     record(midi, audio.getNumSamples());
 }
@@ -113,7 +192,6 @@ void MnKarpAudioProcessor::processBlock(juce::AudioBuffer<float>& audio, juce::M
 void MnKarpAudioProcessor::setZoom(float factor)
 {
     zoom.store(juce::jlimit(0.5f, 1.5f, factor));
-    arpee.setZoom(zoom.load());
 }
 
 //==============================================================================
@@ -125,20 +203,26 @@ juce::AudioProcessorEditor* MnKarpAudioProcessor::createEditor()
 //==============================================================================
 namespace
 {
-void storeChild(juce::XmlElement& root, const char* name, juce::AudioProcessor& child)
+void storeChild(juce::XmlElement& root, const char* name, juce::AudioProcessor* child)
 {
+    if (child == nullptr)
+        return;
+
     juce::MemoryBlock block;
-    child.getStateInformation(block);
+    child->getStateInformation(block);
     root.createNewChildElement(name)->addTextElement(block.toBase64Encoding());
 }
 
-void restoreChild(const juce::XmlElement& root, const char* name, juce::AudioProcessor& child)
+void restoreChild(const juce::XmlElement& root, const char* name, juce::AudioProcessor* child)
 {
+    if (child == nullptr)
+        return;
+
     if (auto* element = root.getChildByName(name))
     {
         juce::MemoryBlock block;
         if (block.fromBase64Encoding(element->getAllSubText()) && block.getSize() > 0)
-            child.setStateInformation(block.getData(), (int) block.getSize());
+            child->setStateInformation(block.getData(), (int) block.getSize());
     }
 }
 
@@ -163,8 +247,10 @@ std::unique_ptr<juce::XmlElement> MnKarpAudioProcessor::createStateXml(bool forP
         root->setAttribute("preset", presetName);
     }
 
-    storeChild(*root, "Kord", kord);
-    storeChild(*root, "Arpee", arpee);
+    // The plugins' own state, as they give it to a host. (mnKarp 1.0 kept the state of its built-in copies
+    // under other names: a project or preset of 1.0 keeps its switches and size, the plugins start as they are.)
+    storeChild(*root, "KordPlugin", getStageProcessor(kordStage));
+    storeChild(*root, "ArpeePlugin", getStageProcessor(arpeeStage));
     return root;
 }
 
@@ -178,24 +264,19 @@ void MnKarpAudioProcessor::applyStateXml(const juce::XmlElement& root, bool from
             setStageFolded(stage, root.getBoolAttribute(juce::String(stageParamId(stage)) + "Folded", false));
     }
 
-    restoreChild(root, "Kord", kord);
-    restoreChild(root, "Arpee", arpee);
+    restoreChild(root, "KordPlugin", getStageProcessor(kordStage));
+    restoreChild(root, "ArpeePlugin", getStageProcessor(arpeeStage));
 
-    // The rack's size wins over the zoom mnArpee kept in its own state.
     if (! fromPreset)
     {
         setZoom((float) root.getDoubleAttribute("zoom", defaultZoom));
-        setWidth(root.getIntAttribute("width", defaultWidth));
+        setWidth(root.getIntAttribute("width", 0));
         presetName = root.getStringAttribute("preset");
         // The project may hold edits made after the preset was saved: compare with the file as it is.
         savedSnapshot = {};
         if (presetName.isNotEmpty())
             if (const auto saved = juce::XmlDocument::parse(presetFile(presetName)))
                 savedSnapshot = saved->toString();
-    }
-    else
-    {
-        setZoom(getZoom());
     }
 }
 
@@ -287,17 +368,12 @@ bool MnKarpAudioProcessor::loadPreset(const juce::String& name)
 
 juce::String MnKarpAudioProcessor::presetSnapshot()
 {
-    // mnArpee keeps its zoom in its state; the rack sets it, so it must not count as a change.
     return createPresetXml()->toString();
 }
 
 std::unique_ptr<juce::XmlElement> MnKarpAudioProcessor::createPresetXml()
 {
-    const float rackZoom = arpee.getZoom();
-    arpee.setZoom(1.0f);
-    auto xml = createStateXml(true);
-    arpee.setZoom(rackZoom);
-    return xml;
+    return createStateXml(true);
 }
 
 bool MnKarpAudioProcessor::isPresetDirty()

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 # The one place the version is set (Semantic Versioning, see AGENTS.md).
-project(mnKarp VERSION 1.0.0)
+project(mnKarp VERSION 2.0.0)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,17 +24,8 @@ else()
     FetchContent_MakeAvailable(juce)
 endif()
 
-# mnKarp has its own copies of mnKord and mnArpee (Source/Kord, Source/Arpee; see Source/ORIGIN.md). Their title bars
-# show the version they were taken from.
-set(MNKARP_KORD_VERSION "1.6.1")
-set(MNKARP_ARPEE_VERSION "1.0.0")
-
-# mnKord's editor includes the generated MnKordVersion.h.
-file(CONFIGURE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/MnKordVersion.h" @ONLY CONTENT
-"#pragma once
-#define MNKORD_VERSION        \"@MNKARP_KORD_VERSION@\"
-#define MNKORD_VERSION_STRING \"@MNKARP_KORD_VERSION@\"
-")
+# mnKarp hosts the installed mnKord.vst3 and mnArpee.vst3 (see MnKarpAudioProcessor::findPlugin()); it has none of
+# their code.
 
 juce_add_plugin(mnKarp
     COMPANY_NAME "MNAudio"
@@ -56,7 +47,7 @@ juce_add_plugin(mnKarp
 
 juce_generate_juce_header(mnKarp)
 
-# Montserrat (titles) and Roboto Condensed (UI text), SIL Open Font License; one copy for the rack and both plugins.
+# Montserrat (titles) and Roboto Condensed (UI text), SIL Open Font License, for the rack's own bar and strips.
 juce_add_binary_data(mnKarpFonts
     SOURCES
         Resources/Fonts/Montserrat.ttf
@@ -65,28 +56,15 @@ juce_add_binary_data(mnKarpFonts
 
 target_sources(mnKarp PRIVATE
     Source/KarpProcessor.cpp
-    Source/KarpEditor.cpp
-    Source/Kord/PluginProcessor.cpp
-    Source/Kord/PluginEditor.cpp
-    Source/Kord/NoteName.cpp
-    Source/Kord/ChordSymbol.cpp
-    Source/Arpee/PatternData.cpp
-    Source/Arpee/ArpEngine.cpp
-    Source/Arpee/PresetLibrary.cpp
-    Source/Arpee/PluginProcessor.cpp
-    Source/Arpee/PluginEditor.cpp
-    Source/Arpee/StepGrid.cpp
-    Source/Arpee/Fonts.cpp)
+    Source/KarpEditor.cpp)
 
-target_include_directories(mnKarp PRIVATE
-    Source
-    "${CMAKE_CURRENT_BINARY_DIR}/generated")
+target_include_directories(mnKarp PRIVATE Source)
 
 target_compile_definitions(mnKarp
     PUBLIC
         JucePlugin_Name="mnKarp"
         MNKARP_VERSION_STRING="${PROJECT_VERSION}"
-        MNARPEE_VERSION_STRING="${MNKARP_ARPEE_VERSION}"
+        JUCE_PLUGINHOST_VST3=1
         JUCE_VST3_CAN_REPLACE_VST2=0
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
@@ -100,6 +78,7 @@ target_link_libraries(mnKarp
     PRIVATE
         mnKarpFonts
         juce::juce_audio_devices
+        juce::juce_audio_processors
         juce::juce_audio_utils
         juce::juce_gui_extra
     PUBLIC
@@ -128,18 +107,26 @@ if(WIN32)
     endif()
 endif()
 
-# Console tests (no host): the chain, the bypass and the project state.
+# Console tests (no host): the chain, the bypass and the project state, with the real plugins loaded.
 #   cmake -S . -B build -DMNKARP_BUILD_TESTS=ON
 #   cmake --build build --config Release --target mnKarpTests
 #   build/Release/mnKarpTests.exe
+# They load the plugins built next to this folder (../mnKord/build, ../mnArpee/build, Release) when those exist, else
+# the installed ones; MNKARP_MNKORD_VST3 and MNKARP_MNARPEE_VST3 in the environment name others.
 option(MNKARP_BUILD_TESTS "Build the console tests (mnKarpTests)" OFF)
 if(MNKARP_BUILD_TESTS)
+    set(MNKARP_TEST_KORD_VST3 "${CMAKE_CURRENT_SOURCE_DIR}/../mnKord/build/mnKord_artefacts/Release/VST3/mnKord.vst3"
+        CACHE FILEPATH "The mnKord.vst3 the tests load when it exists")
+    set(MNKARP_TEST_ARPEE_VST3 "${CMAKE_CURRENT_SOURCE_DIR}/../mnArpee/build/mnArpee_artefacts/Release/VST3/mnArpee.vst3"
+        CACHE FILEPATH "The mnArpee.vst3 the tests load when it exists")
+
     add_executable(mnKarpTests Tests/RackTests.cpp)
     target_include_directories(mnKarpTests PRIVATE
         Source
-        "${CMAKE_CURRENT_BINARY_DIR}/generated"
         $<TARGET_PROPERTY:mnKarp,INCLUDE_DIRECTORIES>)
-    target_compile_definitions(mnKarpTests PRIVATE $<TARGET_PROPERTY:mnKarp,COMPILE_DEFINITIONS>)
+    target_compile_definitions(mnKarpTests PRIVATE $<TARGET_PROPERTY:mnKarp,COMPILE_DEFINITIONS>
+        MNKARP_TEST_KORD_VST3="${MNKARP_TEST_KORD_VST3}"
+        MNKARP_TEST_ARPEE_VST3="${MNKARP_TEST_ARPEE_VST3}")
     if(MSVC)
         target_compile_options(mnKarpTests PRIVATE /utf-8 /Zc:__cplusplus)
         target_link_options(mnKarpTests PRIVATE /STACK:8388608)

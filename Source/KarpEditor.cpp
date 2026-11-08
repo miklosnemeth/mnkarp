@@ -132,13 +132,8 @@ void MnKarpAudioProcessorEditor::RackLookAndFeel::drawPopupMenuItem(
 juce::Component* MnKarpAudioProcessorEditor::RackLookAndFeel::getParentComponentForMenuOptions(
     const juce::PopupMenu::Options& options)
 {
-    if (auto* parent = options.getParentComponent())
-        return parent;
-
-    if (auto* target = options.getTargetComponent())
-        return target->findParentComponentOfClass<juce::AudioProcessorEditor>();
-
-    return nullptr;
+    // A window of its own: inside the rack's window it would be under the plugins' windows.
+    return options.getParentComponent();
 }
 
 void MnKarpAudioProcessorEditor::RackLookAndFeel::getIdealPopupMenuItemSize(
@@ -197,11 +192,6 @@ void MnKarpAudioProcessorEditor::FoldButton::paintButton(juce::Graphics& g, bool
         arrow.addTriangle(c.x - 5.0f, c.y - 3.0f, c.x + 5.0f, c.y - 3.0f, c.x, c.y + 4.0f);
     g.setColour(Palette::text());
     g.fillPath(arrow);
-}
-
-void MnKarpAudioProcessorEditor::Dim::paint(juce::Graphics& g)
-{
-    g.fillAll(Palette::bg().withAlpha(0.55f));
 }
 
 //==============================================================================
@@ -324,7 +314,7 @@ void MnKarpAudioProcessorEditor::saveTake()
 
 //==============================================================================
 MnKarpAudioProcessorEditor::Section::Section(MnKarpAudioProcessorEditor& ownerRef, MnKarpAudioProcessor& processor,
-                                             MnKarpAudioProcessor::Stage stageIn, juce::AudioProcessor& child,
+                                             MnKarpAudioProcessor::Stage stageIn, juce::AudioProcessor* child,
                                              const juce::String& roleIn)
     : owner(ownerRef), rack(processor), stage(stageIn), role(roleIn)
 {
@@ -335,15 +325,25 @@ MnKarpAudioProcessorEditor::Section::Section(MnKarpAudioProcessorEditor& ownerRe
     addAndMakeVisible(fold);
     addAndMakeVisible(holder);
 
-    editor.reset(child.createEditorIfNeeded());
+    if (child != nullptr)
+        editor.reset(child->createEditorIfNeeded());
+
     if (editor != nullptr)
     {
+        applyZoom(rack.getZoom());
         holder.addAndMakeVisible(*editor);
         editor->setTopLeftPosition(0, 0);
         editor->addComponentListener(this);
     }
-    applyZoom(rack.getZoom());
-    addAndMakeVisible(dim);
+    else
+    {
+        missing.setText(child == nullptr ? rack.getLoadError(stage) : name + " has no window.", juce::dontSendNotification);
+        missing.setFont(textFont(16.0f));
+        missing.setColour(juce::Label::textColourId, Palette::danger());
+        missing.setJustificationType(juce::Justification::centred);
+        missing.setSize(800, 90);
+        holder.addAndMakeVisible(missing);
+    }
 
     powerAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
         rack.getApvts(), MnKarpAudioProcessor::stageParamId(stage), power);
@@ -369,7 +369,6 @@ MnKarpAudioProcessorEditor::Section::~Section()
 
 void MnKarpAudioProcessorEditor::Section::refreshPower()
 {
-    dim.setVisible(! isFolded() && ! power.getToggleState());
     repaint();
 }
 
@@ -377,8 +376,14 @@ void MnKarpAudioProcessorEditor::Section::applyFolded()
 {
     fold.folded = isFolded();
     fold.repaint();
-    holder.setVisible(! isFolded());
+    holder.setVisible(! isFolded() && ! hidden);
     refreshPower();
+}
+
+void MnKarpAudioProcessorEditor::Section::setEditorHidden(bool shouldBeHidden)
+{
+    hidden = shouldBeHidden;
+    applyFolded();
 }
 
 void MnKarpAudioProcessorEditor::Section::applyZoom(float factor)
@@ -395,11 +400,8 @@ void MnKarpAudioProcessorEditor::Section::setEditorWidth(int width)
 
 juce::Point<int> MnKarpAudioProcessorEditor::Section::editorSize() const
 {
-    // The bounds in the parent include the editor's own scale.
-    if (editor == nullptr)
-        return {};
-
-    const auto bounds = editor->getBoundsInParent();
+    // The bounds in the parent include a scale the editor may have.
+    const auto bounds = editor != nullptr ? editor->getBoundsInParent() : missing.getBounds();
     return { bounds.getWidth(), bounds.getHeight() };
 }
 
@@ -430,7 +432,6 @@ void MnKarpAudioProcessorEditor::Section::resized()
 
     const auto size = editorSize();
     holder.setBounds(area.removeFromTop(size.y).withWidth(size.x));
-    dim.setBounds(holder.getBounds());
     if (editor != nullptr)
         editor->setTopLeftPosition(0, 0);
 }
@@ -467,9 +468,11 @@ MnKarpAudioProcessorEditor::MnKarpAudioProcessorEditor(MnKarpAudioProcessor& pro
     setLookAndFeel(&lookAndFeel);
 
     sections[MnKarpAudioProcessor::kordStage] = std::make_unique<Section>(
-        *this, rack, MnKarpAudioProcessor::kordStage, rack.getKord(), "chords: one key plays a chord");
+        *this, rack, MnKarpAudioProcessor::kordStage, rack.getStageProcessor(MnKarpAudioProcessor::kordStage),
+        "chords: one key plays a chord");
     sections[MnKarpAudioProcessor::arpeeStage] = std::make_unique<Section>(
-        *this, rack, MnKarpAudioProcessor::arpeeStage, rack.getArpee(), "arpeggiator: pattern of the held notes");
+        *this, rack, MnKarpAudioProcessor::arpeeStage, rack.getStageProcessor(MnKarpAudioProcessor::arpeeStage),
+        "arpeggiator: pattern of the held notes");
 
     prevPresetButton.onClick = [this] { stepPreset(-1); };
     nextPresetButton.onClick = [this] { stepPreset(1); };
@@ -532,13 +535,15 @@ void MnKarpAudioProcessorEditor::resized()
         dialog->setBounds(getLocalBounds());
 
     auto bar = getLocalBounds().reduced(margin, 0).removeFromTop(margin + barHeight).withTrimmedTop(margin);
-    brandArea = bar.removeFromLeft(190);
+    brandArea = bar.removeFromLeft(170);
     zoomButton.setBounds(bar.removeFromRight(58).withSizeKeepingCentre(58, 28));
     bar.removeFromRight(8);
     takeButton.setBounds(bar.removeFromRight(104).withSizeKeepingCentre(104, 28));
 
     // The preset picker, in the middle of what is left: [<] [name] [>] [Save]
-    constexpr int arrowWidth = 26, nameWidth = 240, saveWidth = 56;
+    // The name gets narrower when the windows are small, so the picker never runs into Drag MIDI.
+    constexpr int arrowWidth = 26, saveWidth = 56;
+    const int nameWidth = juce::jlimit(110, 240, bar.getWidth() - 16 - (arrowWidth + 4 + 4 + arrowWidth + 8 + saveWidth));
     auto picker = bar.withSizeKeepingCentre(arrowWidth + 4 + nameWidth + 4 + arrowWidth + 8 + saveWidth, 30);
     prevPresetButton.setBounds(picker.removeFromLeft(arrowWidth).reduced(6, 8));
     picker.removeFromLeft(4);
@@ -616,24 +621,41 @@ void MnKarpAudioProcessorEditor::syncWidths()
         return;
     const juce::ScopedValueSetter<bool> guard(syncing, true);
 
-    // A window whose width is not the rack's was resized by the user (mnArpee's corner): its width is the new one.
+    // The windows are compared on the screen. At the start (no width yet) the wider one sets it; later a window
+    // whose width is not the rack's was resized (mnArpee's corner, a new zoom): its width is the new one.
     int width = rack.getWidth();
-    if (ready)
-        for (const auto& section : sections)
-            if (section->editorWidth() != rack.getWidth())
+    for (const auto& section : sections)
+        if (section->editorWidth() > 0)
+        {
+            if (width <= 0)
+                width = section->editorWidth();
+            else if (! ready || rack.getWidth() <= 0)
+                width = juce::jmax(width, section->editorWidth());
+            else if (section->editorWidth() != rack.getWidth())
             {
                 width = section->editorWidth();
                 break;
             }
+        }
 
-    rack.setWidth(width);
-    for (const auto& section : sections)
-        section->setEditorWidth(rack.getWidth());
+    if (width <= 0)
+        return;
 
-    // mnArpee keeps its own limits: if it did not take the width, the rack follows it.
-    for (const auto& section : sections)
-        if (section->editorWidth() != rack.getWidth())
-            rack.setWidth(section->editorWidth());
+    // Each plugin keeps its own limits: if one does not take the width, the other is set to what it took.
+    for (int pass = 0; pass < 2; ++pass)
+    {
+        rack.setWidth(width);
+        for (const auto& section : sections)
+            if (section->editorWidth() > 0)
+                section->setEditorWidth(width);
+
+        for (const auto& section : sections)
+            if (section->editorWidth() > 0 && section->editorWidth() != width)
+                width = section->editorWidth();
+
+        if (width == rack.getWidth())
+            break;
+    }
 }
 
 void MnKarpAudioProcessorEditor::showZoomMenu()
@@ -839,6 +861,8 @@ void MnKarpAudioProcessorEditor::showDialog(const juce::String& title, const juc
         if (safe != nullptr && safe->dialog != nullptr)
         {
             safe->dialog->setVisible(false);
+            for (auto& section : safe->sections)
+                section->setEditorHidden(false);
             // Not deleted here: this runs inside the dialog's own button click.
             juce::MessageManager::callAsync([safe]
                                             {
@@ -847,6 +871,10 @@ void MnKarpAudioProcessorEditor::showDialog(const juce::String& title, const juc
                                             });
         }
     };
+    // The plugins' windows would cover the dialog: they are hidden while it is open.
+    for (auto& section : sections)
+        section->setEditorHidden(true);
+
     addAndMakeVisible(*dialog);
     dialog->setBounds(getLocalBounds());
     dialog->focusFirst();

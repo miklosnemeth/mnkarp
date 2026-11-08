@@ -3,6 +3,21 @@
 All notable changes to mnKarp. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the version numbers follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] - 2.0.0
+
+### Changed
+- mnKarp is now a rack that loads the **installed** mnKord and mnArpee plugins (`mnKord.vst3`, 1.7.0 or later, and `mnArpee.vst3`
+  from the VST3 folder) instead of having its own copies of them. The windows, presets and libraries are the plugins' own, and an
+  update of mnKord or mnArpee is an update of the rack too. mnKord's window is the new one-keyboard window of mnKord 1.7.0.
+- When one of the two is not installed, its section says so and the MIDI passes it; the installer warns too.
+- The two windows are still always equally wide: mnKord's window now takes any width, like mnArpee's.
+- A switched-off stage is no longer dimmed (the plugin windows are windows of their own); the strip still says it is off.
+- The rack's menus open as windows of their own, and its questions hide the two plugin windows while they are open.
+
+### Removed
+- Projects and rack presets of 1.0 keep their switches, size and folding, but not the state of mnKord and mnArpee in them
+  (it was the state of the built-in copies, which the installed plugins cannot read): they start with their current presets.
+
 ## [1.0.0] - 2026-10-21
 
 ### Added

@@ -19,8 +19,8 @@
 <meta property="og:locale" content="hu_HU">
 <meta property="og:locale:alternate" content="en_US">
 <meta property="og:image" content="https://miklosnemeth.github.io/mnkarp/images/main.png">
-<meta property="og:image:width" content="1126">
-<meta property="og:image:height" content="1287">
+<meta property="og:image:width" content="691">
+<meta property="og:image:height" content="885">
 <meta property="og:image:alt" content="Az mnKarp ablaka: felül az mnKord, alatta az mnArpee">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="mnKarp – ingyenes akkord + arpeggiátor rack plugin (VST3) Windowsra">
@@ -235,7 +235,7 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
    "applicationCategory": "MultimediaApplication",
    "applicationSubCategory": "MIDI effect, VST3 audio plugin",
    "operatingSystem": "Windows 10, Windows 11",
-   "softwareVersion": "1.0.0",
+   "softwareVersion": "2.0.0",
    "downloadUrl": "https://github.com/miklosnemeth/mnkarp/releases/latest",
    "installUrl": "https://github.com/miklosnemeth/mnkarp/releases/latest",
    "fileFormat": "application/vnd.steinberg.vst3",
@@ -256,7 +256,7 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
    ],
    "featureList": [
     "Felül az mnKord (akkordok), alatta az mnArpee (arpeggiátor): a MIDI előbb az mnKordon, aztán az mnArpee-n megy át.",
-    "Kapcsoló mindkét fokozatra; a kikapcsolt fokozat halvány, de szerkeszthető.",
+    "Kapcsoló mindkét fokozatra; a kikapcsolt fokozat átengedi a MIDI-t, és szerkeszthető marad.",
     "Kikapcsoláskor a fokozat felengedi a hangjait.",
     "A fokozat ablaka összecsukható; a projekt megjegyzi.",
     "Egy méret mindkét ablakra, 60 és 115% között; a kettő mindig egyforma széles.",
@@ -266,8 +266,8 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
     "A DAW programlistája a rack presetek listája (128 hely, a legrégebbitől kezdve).",
     "Host-paraméterek: a két kapcsoló és az mnArpee nyolc értéke, automatizáláshoz és kontrollerhez.",
     "MIDI áthúzás: az utolsó rész MIDI-klipként (tempóval, ütem elejéről), vagy fájlba mentve.",
-    "Az mnKord és az mnArpee: a presetjeik, könyvtáraik, böngészőik és az Undo / Redo ugyanúgy működik, mint külön.",
-    "Az mnKord egy billentyűzettel: fölötte a trigger-sáv, a billentyűkön az akkordhangok, színekkel megkülönböztetve.",
+    "A telepített mnKord és mnArpee plugin maga: az ablakaik, presetjeik, könyvtáraik, böngészőik és az Undo / Redo.",
+    "Az mnKord vagy az mnArpee frissítése a rackot is frissíti.",
     "Az mnKord által az mnArpee-nak átadott hangok élőben, a kettő között.",
     "Az mnKord és az mnArpee presetkönyvtára közös az önálló pluginokéval.",
     "A projekt mindkét fokozat teljes állapotát megtartja.",
@@ -292,7 +292,7 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
      "name": "Kell hozzá az mnKord és az mnArpee is?",
      "acceptedAnswer": {
       "@type": "Answer",
-      "text": "Nem. Az mnKarp mindkettőt tartalmazza. Ha megvannak, a három egymás mellett működik, és közösen használják az mnKord és az mnArpee presetkönyvtárát."
+      "text": "Igen. Az mnKarp egy rack, amely a telepített mnKord.vst3-at (legalább 1.7.0) és mnArpee.vst3-at tölti be, az ablakaikkal és a presetkönyvtáraikkal. Előbb mindkettőt telepítsd."
      }
     },
     {
@@ -357,11 +357,11 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
         <a class="btn" href="https://github.com/miklosnemeth/mnkarp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>Forráskód a GitHubon</a>
       </div>
       <ul class="facts">
-        <li>v1.0.0</li>
+        <li>v2.0.0</li>
         <li>VST3 · Windows x64</li>
         <li>Ingyenes, nyílt forrású (AGPL-3.0)</li>
       </ul>
-      <div class="shot"><img src="../images/main.png" width="1126" height="1287" alt="Az mnKarp ablaka: felül a rack presetek, az mnKord billentyűi, a köztes hangok, az mnArpee mintarácsa"></div>
+      <div class="shot"><img src="../images/main.png" width="691" height="885" alt="Az mnKarp ablaka: felül a rack presetek, az mnKord billentyűi, a köztes hangok, az mnArpee mintarácsa"></div>
     </div>
     <section aria-labelledby="how">
       <h2 id="how" class="display">Hogyan működik</h2>
@@ -384,11 +384,11 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
         <li class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/></svg></div><h3>Elfér a képernyőn</h3><p>Egy méret mindkét ablakra (60–115%), egyforma szélességgel, és a nem használt fokozat összecsukható.</p></li>
       </ul>
       <h3 class="listh">Minden funkció</h3>
-      <p class="sub">Az mnKarp 1.0.0 teljes funkciólistája.</p>
+      <p class="sub">Az mnKarp 2.0.0 teljes funkciólistája.</p>
       <div class="featlists">
         <div class="fl"><h4>A rack</h4><ul>
           <li>Felül az mnKord (akkordok), alatta az mnArpee (arpeggiátor): a MIDI előbb az mnKordon, aztán az mnArpee-n megy át.</li>
-          <li>Kapcsoló mindkét fokozatra; a kikapcsolt fokozat halvány, de szerkeszthető.</li>
+          <li>Kapcsoló mindkét fokozatra; a kikapcsolt fokozat átengedi a MIDI-t, és szerkeszthető marad.</li>
           <li>Kikapcsoláskor a fokozat felengedi a hangjait.</li>
           <li>A fokozat ablaka összecsukható; a projekt megjegyzi.</li>
           <li>Egy méret mindkét ablakra, 60 és 115% között; a kettő mindig egyforma széles.</li>
@@ -402,8 +402,8 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
           <li>MIDI áthúzás: az utolsó rész MIDI-klipként (tempóval, ütem elejéről), vagy fájlba mentve.</li>
         </ul></div>
         <div class="fl"><h4>Belül</h4><ul>
-          <li>Az mnKord és az mnArpee: a presetjeik, könyvtáraik, böngészőik és az Undo / Redo ugyanúgy működik, mint külön.</li>
-          <li>Az mnKord egy billentyűzettel: fölötte a trigger-sáv, a billentyűkön az akkordhangok, színekkel megkülönböztetve.</li>
+          <li>A telepített mnKord és mnArpee plugin maga: az ablakaik, presetjeik, könyvtáraik, böngészőik és az Undo / Redo.</li>
+          <li>Az mnKord vagy az mnArpee frissítése a rackot is frissíti.</li>
           <li>Az mnKord által az mnArpee-nak átadott hangok élőben, a kettő között.</li>
           <li>Az mnKord és az mnArpee presetkönyvtára közös az önálló pluginokéval.</li>
           <li>A projekt mindkét fokozat teljes állapotát megtartja.</li>
@@ -423,7 +423,7 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
       <h2 id="faqh" class="display">Kérdések</h2>
       <div class="faq">
         <details><summary>Ingyenes az mnKarp?</summary><p>Igen. Ingyenes és nyílt forrású (AGPL-3.0), regisztráció és másolásvédelem nélkül.</p></details>
-        <details><summary>Kell hozzá az mnKord és az mnArpee is?</summary><p>Nem. Az mnKarp mindkettőt tartalmazza. Ha megvannak, a három egymás mellett működik, és közösen használják az mnKord és az mnArpee presetkönyvtárát.</p></details>
+        <details><summary>Kell hozzá az mnKord és az mnArpee is?</summary><p>Igen. Az mnKarp egy rack, amely a telepített mnKord.vst3-at (legalább 1.7.0) és mnArpee.vst3-at tölti be, az ablakaikkal és a presetkönyvtáraikkal. Előbb mindkettőt telepítsd.</p></details>
         <details><summary>Miért nem szól?</summary><p>Az mnKarp MIDI-effekt: tegyél utána egy szintit vagy samplert ugyanarra a hangszersávra.</p></details>
         <details><summary>Automatizálható az arpeggiátor?</summary><p>Igen. Az mnArpee rate, octave, gate, swing, steps, latch, group és cut értéke és a két kapcsoló host-paraméter.</p></details>
         <details><summary>Hogyan kerül a végeredmény MIDI-ként a DAW-ba?</summary><p>Játssz, aztán húzd a <strong>Drag MIDI</strong> gombot egy sávra. A klip az első hang ütemének elején kezdődik, és a tempót is viszi. Kattintásra fájlba menti.</p></details>
@@ -435,7 +435,7 @@ ol.steps, ul.cards { margin: 0; padding: 0; }
       <p class="sub">Ingyenes, regisztráció és másolásvédelem nélkül.</p>
       <div class="get">
         <div class="box"><h3>Windows</h3><ol>
-          <li>Töltsd le az <strong>mnKarp-1.0.0-win-x64-setup.exe</strong> fájlt a legutóbbi kiadásból.</li>
+          <li>Töltsd le az <strong>mnKarp-2.0.0-win-x64-setup.exe</strong> fájlt a legutóbbi kiadásból.</li>
           <li>Futtasd. A plugin a szabványos VST3 mappába kerül.</li>
           <li>A DAW-ban tedd az mnKarpot egy hangszersávra, a szinti elé.</li>
         </ol><a class="btn primary" href="https://github.com/miklosnemeth/mnkarp/releases/latest">A telepítő letöltése</a></div>
