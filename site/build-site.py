@@ -56,7 +56,7 @@ T = {
         "eyebrow": "Free MIDI rack plugin · VST3",
         "h1_hidden": " – chords and arpeggios in one rack (VST3)",
         "tagline": "Chords and arpeggios in one rack.",
-        "lede": "mnKarp puts mnKord (one key, a whole chord) above mnArpee (a step-pattern arpeggiator) in one plugin. "
+        "lede": "mnKarp loads your installed mnKord (one key, a whole chord) above mnArpee (a step-pattern arpeggiator) in one rack. "
                 "Play a single note and hear the chord as a pattern; switch either one off and the MIDI passes it untouched.",
         "cta_download": "Download for Windows", "cta_guide": "User guide (PDF)", "cta_source": "Source on GitHub",
         "pdf": "mnKarp-User-Guide.pdf",
@@ -133,7 +133,7 @@ T = {
         "eyebrow": "Ingyenes MIDI rack plugin · VST3",
         "h1_hidden": " – akkordok és arpeggiók egy rackben (VST3)",
         "tagline": "Akkordok és arpeggiók egy rackben.",
-        "lede": "Az mnKarp egy pluginban egymás fölé teszi az mnKordot (egy billentyű, egy egész akkord) és az mnArpee-t (lépésmintás "
+        "lede": "Az mnKarp egy rackben egymás fölé tölti be a telepített mnKordot (egy billentyű, egy egész akkord) és az mnArpee-t (lépésmintás "
                 "arpeggiátor). Egy hangot játszol, és mintában hallod az akkordot; bármelyiket kikapcsolhatod, és a MIDI érintetlenül átmegy rajta.",
         "cta_download": "Letöltés Windowsra", "cta_guide": "Útmutató (PDF)", "cta_source": "Forráskód a GitHubon",
         "pdf": "mnKarp-Felhasznaloi-utmutato.pdf",
