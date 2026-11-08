@@ -26,7 +26,7 @@ KORD_CSS = os.path.join(ROOT, "site", "site.css")
 SITE = "https://miklosnemeth.github.io/mnkarp/"
 REPO = "https://github.com/miklosnemeth/mnkarp"
 KORD_SITE = "https://miklosnemeth.github.io/mnkord/"
-ARPEE_REPO = "https://github.com/miklosnemeth/mnArpee"
+ARPEE_SITE = "https://miklosnemeth.github.io/mnArpee/"
 AUTHOR = "Miklós Németh"
 AUTHOR_HU = "Németh Miklós"
 
@@ -115,7 +115,7 @@ T = {
         "docs_h": "Documentation and source",
         "links": [("{base}mnKarp-User-Guide.pdf", "User guide (PDF)"), ("{repo}", "Source code on GitHub"),
                   ("{repo}/blob/master/CHANGELOG.md", "What changed"), (KORD_SITE, "mnKord, the chord plugin alone"),
-                  (ARPEE_REPO, "mnArpee, the arpeggiator alone")],
+                  (ARPEE_SITE, "mnArpee, the arpeggiator alone")],
         "mac": "Only for Windows for now.",
         "by": "Vibecoded by", "name": AUTHOR, "name_html": "Miklós <span>Németh</span>",
         "about": "mnKarp, mnKord and mnArpee are made in Hungary, as free software.",
@@ -192,7 +192,7 @@ T = {
         "docs_h": "Dokumentáció és forráskód",
         "links": [("{base}mnKarp-Felhasznaloi-utmutato.pdf", "Felhasználói útmutató (PDF)"), ("{repo}", "Forráskód a GitHubon"),
                   ("{repo}/blob/master/CHANGELOG.md", "Változások"), (KORD_SITE + "hu/", "mnKord, az akkord plugin külön"),
-                  (ARPEE_REPO, "mnArpee, az arpeggiátor külön")],
+                  (ARPEE_SITE, "mnArpee, az arpeggiátor külön")],
         "mac": "Egyelőre csak Windowsra.",
         "by": "Vibecoder", "name": AUTHOR_HU, "name_html": "Németh <span>Miklós</span>",
         "about": "Az mnKarp, az mnKord és az mnArpee Magyarországon készül, szabad szoftverként.",
