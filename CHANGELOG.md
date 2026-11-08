@@ -3,7 +3,7 @@
 All notable changes to mnKarp. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the version numbers follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] - 2.0.0
+## [2.0.0] - 2026-11-08
 
 ### Changed
 - mnKarp is now a rack that loads the **installed** mnKord and mnArpee plugins (`mnKord.vst3`, 1.7.0 or later, and `mnArpee.vst3`

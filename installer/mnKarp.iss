@@ -1,7 +1,7 @@
 ; Windows installer for the mnKarp VST3 (the Standalone is not included).
 ; It is built by the normal Release build (the CMake target mnKarpInstaller, when Inno Setup 6
 ; is installed). By hand, from a Release build, giving the version on the command line:
-;   ISCC.exe /DMyAppVersion=1.0.0 installer\mnKarp.iss
+;   ISCC.exe /DMyAppVersion=2.0.0 installer\mnKarp.iss
 ; The result is build\installer\mnKarp-<version>-win-x64-setup.exe.
 ; What the MNAudio installers share (the folders, closing the DAW, the old version) is in
 ; MnAudioInstaller.iss, the same file as in mnKord and mnArpee.
