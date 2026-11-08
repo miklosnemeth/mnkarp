@@ -17,7 +17,7 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 ### Removed
 - The rack presets: the presets are mnKord's and mnArpee's own, chosen in their windows (the project still keeps the state of
   both and the switches). The top bar has no preset picker, and the host's program list is no longer the rack presets (the
-  rack has a single program). Rack preset files of 1.0 (`Documents\MNAudio\mnKarp\Presets`) are left alone, but not read.
+  rack has a single program). The installer deletes the rack preset files of 1.0 (`Documents\MNAudio\mnKarp\Presets`).
 - Projects of 1.0 keep their switches, size and folding, but not the state of mnKord and mnArpee in them
   (it was the state of the built-in copies, which the installed plugins cannot read): they start with their current presets.
 

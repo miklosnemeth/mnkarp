@@ -30,6 +30,14 @@ AppId={{{#MyAppGuid}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 OutputDir={#InstallerOutputDir}
+; The folder below is the installing user's Documents on purpose (the rack presets of 1.0).
+UsedUserAreasWarning=no
+
+[InstallDelete]
+; mnKarp 2.0 has no rack presets (the presets are mnKord's and mnArpee's own): the preset files of 1.0 go.
+Type: files; Name: "{userdocs}\MNAudio\mnKarp\Presets\*.mnkarp"
+Type: dirifempty; Name: "{userdocs}\MNAudio\mnKarp\Presets"
+Type: dirifempty; Name: "{userdocs}\MNAudio\mnKarp"
 
 [Files]
 ; The plugin goes to the standard VST3 folder every host scans, in a folder of its own for MNAudio.
