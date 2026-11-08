@@ -12,10 +12,13 @@ and the version numbers follow [Semantic Versioning](https://semver.org/).
 - When one of the two is not installed, its section says so and the MIDI passes it; the installer warns too.
 - The two windows are still always equally wide: mnKord's window now takes any width, like mnArpee's.
 - A switched-off stage is no longer dimmed (the plugin windows are windows of their own); the strip still says it is off.
-- The rack's menus open as windows of their own, and its questions hide the two plugin windows while they are open.
+- The rack's menus open as windows of their own.
 
 ### Removed
-- Projects and rack presets of 1.0 keep their switches, size and folding, but not the state of mnKord and mnArpee in them
+- The rack presets: the presets are mnKord's and mnArpee's own, chosen in their windows (the project still keeps the state of
+  both and the switches). The top bar has no preset picker, and the host's program list is no longer the rack presets (the
+  rack has a single program). Rack preset files of 1.0 (`Documents\MNAudio\mnKarp\Presets`) are left alone, but not read.
+- Projects of 1.0 keep their switches, size and folding, but not the state of mnKord and mnArpee in them
   (it was the state of the built-in copies, which the installed plugins cannot read): they start with their current presets.
 
 ## [1.0.0] - 2026-10-21

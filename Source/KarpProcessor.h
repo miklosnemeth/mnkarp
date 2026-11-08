@@ -22,7 +22,6 @@
 // state of each of the two processors.
 //==============================================================================
 class MnKarpAudioProcessor : public juce::AudioProcessor,
-                             private juce::AsyncUpdater,
                              private juce::Timer
 {
 public:
@@ -46,17 +45,12 @@ public:
     bool isMidiEffect() const override { return true; }
     double getTailLengthSeconds() const override { return 0.0; }
 
-    // The host's program list is the list of the rack presets, oldest first (a new preset goes to the end, so the
-    // numbers a host has stored keep their meaning), padded with empty slots named "-" to a number that never
-    // changes. Some hosts change the program from the audio thread; the preset is then loaded on the message thread.
-    static constexpr int numHostPrograms = 128;
-    int getNumPrograms() override { return numHostPrograms; }
-    int getCurrentProgram() override;
-    void setCurrentProgram(int index) override;
-    const juce::String getProgramName(int index) override;
+    // The rack has no presets of its own: the presets are mnKord's and mnArpee's, chosen in their windows.
+    int getNumPrograms() override { return 1; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram(int) override {}
+    const juce::String getProgramName(int) override { return {}; }
     void changeProgramName(int, const juce::String&) override {}
-    // Reads the preset folder again (message thread): after a save or delete, or files added from outside.
-    void refreshProgramList();
 
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
@@ -85,22 +79,6 @@ public:
     // 0 = not known yet (the editor takes the plugins' own width then).
     int getWidth() const { return windowWidth.load(); }
     void setWidth(int width) { windowWidth.store(juce::jmax(0, width)); }
-
-    // Rack presets: the two plugins' presets (as they are now) and the two switches under one name, kept as
-    // files in Documents\MNAudio\mnKarp\Presets, shared by every project. The size and the folding of the
-    // windows are not part of a preset. Message thread only.
-    static juce::File getPresetFolder();
-    // Relocates the folder (for tests). An empty File restores the default.
-    static void overridePresetFolder(const juce::File& folder);
-    static juce::StringArray listPresets();   // the names, sorted
-    static juce::StringArray listPresetsByAge();   // the names, oldest first (the order of the host's programs)
-    // The preset last saved or loaded in this project ("" = none).
-    juce::String getPresetName() const { return presetName; }
-    bool savePreset(const juce::String& name);
-    bool loadPreset(const juce::String& name);
-    bool deletePreset(const juce::String& name);
-    // Whether the current state differs from the rack preset as it was loaded or saved (false without a preset).
-    bool isPresetDirty();
 
     // The notes sounding after a stage (0 = after mnKord, 1 = after mnArpee), for the editor's display:
     // bit n of the 128-bit set is note n.
@@ -139,9 +117,7 @@ public:
     void setStageFolded(Stage stage, bool shouldBeFolded) { folded[(size_t) stage].store(shouldBeFolded); }
 
 private:
-    void handleAsyncUpdate() override;
     void timerCallback() override { collectRecording(); }
-    void notifyHostProgramsChanged();
     void record(const juce::MidiBuffer& midi, int numSamples);
 
     // Runs one stage on the block, or passes the MIDI through when it is off (or not loaded).
@@ -149,13 +125,7 @@ private:
     void loadPlugins();
 
     static juce::AudioProcessorValueTreeState::ParameterLayout makeLayout();
-    std::unique_ptr<juce::XmlElement> createStateXml(bool forPreset);
-    void applyStateXml(const juce::XmlElement& root, bool fromPreset);
-    static juce::File presetFile(const juce::String& name);
     void trackNotes(Stage stage, const juce::MidiBuffer& midi);
-    // The state a rack preset holds, as text.
-    juce::String presetSnapshot();
-    std::unique_ptr<juce::XmlElement> createPresetXml();
 
     juce::AudioPluginFormatManager formats;
     std::array<std::unique_ptr<juce::AudioPluginInstance>, numStages> plugins;
@@ -168,12 +138,6 @@ private:
     std::atomic<float> zoom { defaultZoom };
     std::atomic<int> windowWidth { 0 };
 
-    juce::String presetName;
-    juce::String savedSnapshot;   // presetSnapshot() when the preset was loaded or saved
-    juce::CriticalSection programLock;
-    juce::StringArray programNames;           // the rack presets, as the host's programs
-    std::atomic<int> pendingProgram { -1 };
-    std::atomic<bool> hostNotificationPending { false };
     // The parameters of mnArpee that the rack shows to the host.
     std::vector<MirrorParameter*> mirrors;
 

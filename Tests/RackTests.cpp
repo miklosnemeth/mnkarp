@@ -259,42 +259,22 @@ int main(int argc, char** argv)
     }
 
     {
-        const auto folder = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("mnKarpTestPresets");
-        folder.deleteRecursively();
-        MnKarpAudioProcessor::overridePresetFolder(folder);
-
+        // The rack has no presets of its own: the presets are mnKord's and mnArpee's, kept with the project.
         auto rack = makeRack();
-        setStage(*rack, MnKarpAudioProcessor::arpeeStage, false);
-        check(rack->savePreset("Pad chords"), "presets: save");
-        check(MnKarpAudioProcessor::listPresets() == juce::StringArray { "Pad chords" }, "presets: the list has it");
-        check(rack->getPresetName() == "Pad chords", "presets: it is the current one");
+        check(rack->getNumPrograms() == 1 && rack->getCurrentProgram() == 0, "presets: the rack has no program list");
 
-        // Change everything, then load it back.
-        setStage(*rack, MnKarpAudioProcessor::arpeeStage, true);
         rack->getStageProcessor(MnKarpAudioProcessor::kordStage)->setCurrentProgram(kordProgram(*rack, "Power Chords"));
         setStage(*rack, MnKarpAudioProcessor::arpeeStage, false);
-        check(run(*rack, 1, noteOn(60)).on != std::multiset<int> { 60, 64, 67 }, "presets: another mnKord preset");
+        const auto powerChords = run(*rack, 1, noteOn(60)).on;
+        check(powerChords != std::multiset<int> { 60, 64, 67 }, "presets: mnKord's own preset is played");
         run(*rack, 1, [] { juce::MidiBuffer m; m.addEvent(juce::MidiMessage::allNotesOff(1), 0); return m; }());
-        setStage(*rack, MnKarpAudioProcessor::arpeeStage, true);
-        rack->setZoom(0.7f);
-        check(rack->loadPreset("Pad chords"), "presets: load");
-        check(! rack->isStageOn(MnKarpAudioProcessor::arpeeStage), "presets: the switches come back");
-        check(rack->getZoom() == 0.7f, "presets: the size is not part of a preset");
-        check(run(*rack, 1, noteOn(60)).on == std::multiset<int> { 60, 64, 67 }, "presets: mnKord's chords come back");
 
         juce::MemoryBlock state;
         rack->getStateInformation(state);
-        MnKarpAudioProcessor other;
-        other.setStateInformation(state.getData(), (int) state.getSize());
-        check(other.getPresetName() == "Pad chords", "presets: the project keeps the preset name");
-
-        check(! rack->loadPreset("No such preset"), "presets: a missing preset does not load");
-        check(rack->deletePreset("Pad chords") && MnKarpAudioProcessor::listPresets().isEmpty()
-                  && rack->getPresetName().isEmpty(),
-              "presets: delete");
-
-        MnKarpAudioProcessor::overridePresetFolder({});
-        folder.deleteRecursively();
+        auto other = makeRack();
+        other->setStateInformation(state.getData(), (int) state.getSize());
+        check(! other->isStageOn(MnKarpAudioProcessor::arpeeStage), "presets: the project keeps the switches");
+        check(run(*other, 1, noteOn(60)).on == powerChords, "presets: the project keeps mnKord's preset");
     }
 
     {
@@ -333,93 +313,16 @@ int main(int argc, char** argv)
         check(std::abs(gate->getValue() - 0.5f) < 1.0e-6f, "parameters: mnArpee's own change shows in the host's value");
         check(counter.changes == 1, "parameters: the host is told once about mnArpee's change");
 
-        // The same through a rack preset: the loaded value reaches the host.
-        const auto folder = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("mnKarpTestParams");
-        folder.deleteRecursively();
-        MnKarpAudioProcessor::overridePresetFolder(folder);
+        // The same through a project: the restored value reaches the host.
         source->setValueNotifyingHost(0.25f);
-        rack->savePreset("Gate 25");
-        source->setValueNotifyingHost(0.9f);
-        counter.changes = 0;
-        rack->loadPreset("Gate 25");
-        check(std::abs(gate->getValue() - source->getValue()) < 1.0e-6f && counter.changes > 0,
-              "parameters: a loaded preset is shown to the host");
-        rack->removeListener(&counter);
-        MnKarpAudioProcessor::overridePresetFolder({});
-        folder.deleteRecursively();
-    }
-
-    {
-        // The host's program list is the list of the rack presets, oldest first.
-        const auto folder = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("mnKarpTestPrograms");
-        folder.deleteRecursively();
-        MnKarpAudioProcessor::overridePresetFolder(folder);
-
-        auto rack = makeRack();
-        check(rack->getNumPrograms() == 128 && rack->getProgramName(0) == "-", "programs: 128 slots, empty ones are \"-\"");
-
-        setStage(*rack, MnKarpAudioProcessor::arpeeStage, false);
-        rack->savePreset("Zebra");
-        juce::Thread::sleep(40);
-        setStage(*rack, MnKarpAudioProcessor::arpeeStage, true);
-        rack->savePreset("Apple");
-
-        check(rack->getProgramName(0) == "Zebra" && rack->getProgramName(1) == "Apple" && rack->getProgramName(2) == "-",
-              "programs: the presets, oldest first");
-        check(rack->getCurrentProgram() == 1, "programs: the current one is the last saved");
-
-        rack->setCurrentProgram(0);
-        check(rack->getPresetName() == "Zebra" && ! rack->isStageOn(MnKarpAudioProcessor::arpeeStage),
-              "programs: choosing a program loads the preset");
-        check(rack->getCurrentProgram() == 0, "programs: and it is the current one");
-
-        rack->setCurrentProgram(50);
-        check(rack->getPresetName() == "Zebra", "programs: an empty slot changes nothing");
-
-        // A preset file copied in from outside shows up after a refresh.
-        folder.getChildFile("Zebra.mnkarp").copyFileTo(folder.getChildFile("Copy.mnkarp"));
-        rack->refreshProgramList();
-        check(rack->getProgramName(2) == "Copy", "programs: a file added from outside is listed");
-
-        MnKarpAudioProcessor::overridePresetFolder({});
-        folder.deleteRecursively();
-    }
-
-    {
-        // Unsaved changes of a rack preset.
-        const auto folder = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("mnKarpTestDirty");
-        folder.deleteRecursively();
-        MnKarpAudioProcessor::overridePresetFolder(folder);
-
-        auto rack = makeRack();
-        check(! rack->isPresetDirty(), "dirty: no preset, nothing to save");
-        rack->savePreset("Dirty test");
-        check(! rack->isPresetDirty(), "dirty: not after saving");
-        setStage(*rack, MnKarpAudioProcessor::arpeeStage, false);
-        check(rack->isPresetDirty(), "dirty: a switch changed");
-        rack->savePreset("Dirty test");
-        check(! rack->isPresetDirty(), "dirty: saved again");
-        rack->setZoom(0.6f);
-        check(! rack->isPresetDirty(), "dirty: the size is not a change of the preset");
-        arpeeParameter(*rack, "Gate %")->setValueNotifyingHost(0.1f);
-        check(rack->isPresetDirty(), "dirty: an mnArpee value changed");
-        rack->loadPreset("Dirty test");
-        check(! rack->isPresetDirty(), "dirty: not after loading");
-
         juce::MemoryBlock state;
         rack->getStateInformation(state);
-        MnKarpAudioProcessor other;
-        other.setStateInformation(state.getData(), (int) state.getSize());
-        check(other.getPresetName() == "Dirty test" && ! other.isPresetDirty(), "dirty: a project with the saved preset");
-        setStage(other, MnKarpAudioProcessor::kordStage, false);
-        juce::MemoryBlock edited;
-        other.getStateInformation(edited);
-        MnKarpAudioProcessor third;
-        third.setStateInformation(edited.getData(), (int) edited.getSize());
-        check(third.isPresetDirty(), "dirty: a project with edits after the save shows them as unsaved");
-
-        MnKarpAudioProcessor::overridePresetFolder({});
-        folder.deleteRecursively();
+        source->setValueNotifyingHost(0.9f);
+        counter.changes = 0;
+        rack->setStateInformation(state.getData(), (int) state.getSize());
+        check(std::abs(gate->getValue() - 0.25f) < 1.0e-3f && counter.changes > 0,
+              "parameters: a restored project is shown to the host");
+        rack->removeListener(&counter);
     }
 
     {

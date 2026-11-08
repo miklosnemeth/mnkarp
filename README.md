@@ -16,20 +16,18 @@ MIDI in -> [ mnKord ] -> [ mnArpee ] -> MIDI out
 - Each section has a round **power switch** at the left of its strip. It is a host parameter (`mnKord On`,
   `mnArpee On`), so it can be automated or mapped to a controller. A switched-off section can still be edited.
 - Switching a section off releases what it is sounding (the chord, the arpeggio), so no note hangs.
-- The top bar has the **rack presets** (previous / next, the name menu with Save as, Delete and Show the preset folder, Save) and
-  the size button (75% to start with), which sets the size of both windows, 60% to 115%; it is kept with the project.
-  A rack preset holds the current presets of mnKord and mnArpee and the two switches (not the size); the files are in
-  `Documents\MNAudio\mnKarp\Presets`.
+- The top bar has the size button (75% to start with), which sets the size of both windows, 60% to 115%; it is kept with the
+  project. The rack has no presets of its own: choose the presets in mnKord's and mnArpee's windows.
 - The line between the two windows shows the notes that mnKord gives to mnArpee, live.
 - **Drag MIDI** (top bar): drag the last take into the DAW as a MIDI clip (on the bar it started on, with its tempo), or click to
-  save it as a `.mid` file. A green dot by the rack preset's name marks unsaved changes; the questions open inside the window (the two plugin windows are hidden while one is open).
+  save it as a `.mid` file.
 - The two windows are always equally wide: resize one (mnArpee has a resize corner) and the other follows.
 - The arrow at the right of a strip **folds** the section's window away, to make the rack shorter.
 - The windows are the installed plugins' own (mnKord with its TRIGGER lane and one keyboard): presets, the preset libraries (`Documents\MNAudio\mnKord`, `...\mnArpee`),
   Undo / Redo and mnArpee's zoom and resize corner work as in the single plugins. The project keeps the state of both.
 
 In the host: the two switches and mnArpee's parameters (rate, octave, gate, swing, steps, latch, group, cut) are host parameters
-(`mnKord On`, `mnArpee On`, `mnArpee ...`), and the host's program list is the list of the rack presets (128 slots, oldest first).
+(`mnKord On`, `mnArpee On`, `mnArpee ...`). The rack has a single host program (the presets are the plugins' own).
 The order of the stages is fixed.
 
 ## Home page

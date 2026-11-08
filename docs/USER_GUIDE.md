@@ -33,7 +33,7 @@ the next device, a synth or a sampler. It makes no sound itself.
 
 From top to bottom:
 
-- **The top bar.** The title and the version, the rack presets in the middle, then **Drag MIDI** and the size button at the right.
+- **The top bar.** The title and the version, then **Drag MIDI** and the size button at the right.
 - **The mnKord section.** A strip with the power switch, the name and the fold arrow, and under it mnKord's window (its
   **TRIGGER** lane and keyboard are described in mnKord's guide).
 - **The note line.** The notes that mnKord gives to mnArpee, live: when you press a key you see the chord here. It is a quick way to
@@ -69,34 +69,16 @@ The two windows are **always equally wide**. mnArpee's window can be resized wit
 follows it, and the other way round (mnKord's window takes any width from 848 to 1600 pixels at 100%). The size and the width are
 kept with the project.
 
-## Rack presets
+## Presets
 
-A rack preset holds the **current presets of mnKord and mnArpee** and the **two switches** under one name, so a whole sound
-("Pop chords with a 16th arp") comes back with one click. It does not hold the size of the window.
-
-In the top bar:
-
-- the arrows step to the previous and the next preset;
-- the name opens the menu: the list of the presets (the current one is ticked), **Save**, **Save as...**, **Revert to saved**,
-  **Delete...** and **Show the preset folder**;
-- **Save** writes the current preset; when the project has none yet, it asks for a name. A name that is taken asks before it replaces it.
-
-A green dot at the left of the name means the rack has changed since the preset was loaded or saved (a switch, or a preset or a value in
-one of the two plugins; the size does not count). Choosing another preset then asks first: **Save**, **Discard** or **Cancel**. The
-questions open inside the rack's window, which hides the two plugin windows while a question is open.
-
-The presets are files (`.mnkarp`) in `Documents\MNAudio\mnKarp\Presets`, shared by every project and every instance of mnKarp. Copy
-them to another computer to take them with you. A rack preset stores the *content* of the two presets, so it plays the same even
-if you later edit the preset in the mnKord or mnArpee library. Delete moves the file to the recycle bin.
-
-A project saved with mnKarp keeps the full state of both stages, whether or not a rack preset is selected.
+The rack has no presets of its own. The presets are **mnKord's and mnArpee's**: choose, save and browse them in their windows, as in
+the single plugins (the same libraries). A project saved with mnKarp keeps the full state of both stages and the two switches.
 
 ## Where the files are
 
 | What | Where |
 |------|-------|
 | The plugin | `C:\Program Files\Common Files\VST3\MNAudio\mnKarp.vst3` |
-| Rack presets | `Documents\MNAudio\mnKarp\Presets` |
 | mnKord presets | `Documents\MNAudio\mnKord` (the same as mnKord's own) |
 | mnArpee presets | `Documents\MNAudio\mnArpee` (the same as mnArpee's own) |
 
@@ -112,7 +94,7 @@ onto a track (or the arranger) and the notes land there as a MIDI clip. Click it
 - The tempo it was played at is in the file; 960 ticks per quarter note.
 - The button is grey while there is nothing to drag.
 
-## In the DAW: automation and the program list
+## In the DAW: automation
 
 **Parameters.** The host sees these parameters of the rack, and you can automate, record and map them to a controller:
 
@@ -125,11 +107,6 @@ onto a track (or the arranger) and the notes land there as a MIDI clip. Click it
 They are the very controls of mnArpee's window: move one in the window and the host records it, automate one in the host and the
 control follows. mnKord has no parameters of its own.
 
-**Presets from the DAW.** The host's preset (program) list is the list of the **rack presets**, oldest first, so a new preset goes to
-the end and the numbers a DAW stores keep their meaning. There are always 128 slots; the empty ones are called "-". Choosing a
-program in the DAW loads that rack preset, as the name menu does. A preset file copied into the folder shows up when the menu is
-opened (or when the DAW asks again).
-
 The order of the stages is fixed: mnKord first, then mnArpee.
 
 ## Questions
@@ -141,8 +118,8 @@ Check the two switches, and that mnKord has a mapping for the key (see its guide
 
 **I switched a stage off while holding a key, and now the key is silent.** The held key was released with the stage. Press it again.
 
-**Does it replace mnKord and mnArpee?** No: they stay as they are, and mnKarp uses the same code. If you want only a chord
-mapper or only an arpeggiator, use them alone.
+**Does it replace mnKord and mnArpee?** No: mnKarp loads them, so they must be installed. If you want only a chord mapper or only
+an arpeggiator, use them alone.
 
 ## License
 

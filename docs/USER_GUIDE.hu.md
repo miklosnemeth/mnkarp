@@ -32,7 +32,7 @@ eszköznek, egy szintinek vagy samplernek. Hangot nem ad.
 
 Fentről lefelé:
 
-- **A felső sáv.** A cím és a verzió, középen a rack presetek, jobbra a **Drag MIDI** és a méret gomb.
+- **A felső sáv.** A cím és a verzió, jobbra a **Drag MIDI** és a méret gomb.
 - **Az mnKord szekció.** Egy sáv a kapcsolóval, a névvel és az összecsukó nyíllal, alatta az mnKord ablaka (a **TRIGGER** sávot és a
   billentyűzetet az mnKord útmutatója írja le).
 - **A hangsor.** Azok a hangok, amelyeket az mnKord átad az mnArpee-nak, élőben: billentyű lenyomásakor itt látod az akkordot. Gyorsan
@@ -67,34 +67,17 @@ magas; ha nem fér el a képernyőn, válassz kisebbet.
 A két ablak **mindig egyforma széles**. Az mnArpee ablaka átméretezhető a jobb alsó sarkával, és az mnKord ablaka követi, meg
 fordítva (az mnKord ablaka 100%-on 848 és 1600 képpont közötti szélességet vehet fel). A méretet és a szélességet a projekt megjegyzi.
 
-## Rack presetek
+## Presetek
 
-Egy rack preset az **mnKord és az mnArpee jelenlegi presetjét** és a **két kapcsolót** tárolja egy név alatt, így egy egész hang
-("Pop akkordok 16-od arpeggióval") egy kattintással visszajön. Az ablak méretét nem tartalmazza.
-
-A felső sávban:
-
-- a nyilak az előző és a következő presetre lépnek;
-- a név megnyitja a menüt: a presetek listája (a jelenlegi pipával), **Save**, **Save as...**, **Revert to saved**, **Delete...** és
-  **Show the preset folder**;
-- a **Save** a jelenlegi presetet írja ki; ha a projektnek még nincs, nevet kér. Foglalt névnél rákérdez, mielőtt felülírná.
-
-A név bal oldalán lévő zöld pötty azt jelzi, hogy a rack változott a preset betöltése vagy mentése óta (egy kapcsoló, vagy a két plugin
-valamelyikének presetje vagy értéke; a méret nem számít). Ilyenkor másik preset választásakor előbb rákérdez: **Save**, **Discard** vagy
-**Cancel**. A kérdések a rack ablakán belül jelennek meg; amíg egy kérdés nyitva van, a két plugin ablaka el van rejtve.
-
-A presetek fájlok (`.mnkarp`) a `Documents\MNAudio\mnKarp\Presets` mappában, minden projekt és minden mnKarp példány közösen
-használja őket. Másik gépre másolással vihetők át. A rack preset a két preset *tartalmát* tárolja, ezért akkor is ugyanúgy szól, ha
-később átszerkeszted a presetet az mnKord vagy az mnArpee könyvtárában. A Delete a fájlt a lomtárba teszi.
-
-Az mnKarppal mentett projekt mindkét fokozat teljes állapotát megtartja, akár van kiválasztott rack preset, akár nincs.
+A racknek nincsenek saját presetjei. A presetek az **mnKord és az mnArpee sajátjai**: az ablakaikban választod, mented és böngészed
+őket, ugyanúgy, mint az önálló pluginokban (ugyanazok a könyvtárak). Az mnKarppal mentett projekt mindkét fokozat teljes állapotát és
+a két kapcsolót megtartja.
 
 ## Hol vannak a fájlok
 
 | Mi | Hol |
 |----|-----|
 | A plugin | `C:\Program Files\Common Files\VST3\MNAudio\mnKarp.vst3` |
-| Rack presetek | `Documents\MNAudio\mnKarp\Presets` |
 | mnKord presetek | `Documents\MNAudio\mnKord` (ugyanaz, mint az mnKord sajátja) |
 | mnArpee presetek | `Documents\MNAudio\mnArpee` (ugyanaz, mint az mnArpee sajátja) |
 
@@ -110,7 +93,7 @@ gombot egy sávra (vagy az arrangerbe), és a hangok MIDI-klipként odakerülnek
 - A fájlban benne van a tempó is; negyedenként 960 tick.
 - Amíg nincs mit áthúzni, a gomb szürke.
 
-## A DAW-ban: automatizálás és programlista
+## A DAW-ban: automatizálás
 
 **Paraméterek.** A host a rack következő paramétereit látja, ezeket automatizálhatod, felveheted, és kontrollerre is kötheted:
 
@@ -122,11 +105,6 @@ gombot egy sávra (vagy az arrangerbe), és a hangok MIDI-klipként odakerülnek
 
 Ezek az mnArpee ablakának saját vezérlői: ha az ablakban megmozdítasz egyet, a host felveszi, ha a hostban automatizálsz egyet, a
 vezérlő követi. Az mnKordnak nincs saját paramétere.
-
-**Presetek a DAW-ból.** A host preset-(program-)listája a **rack presetek** listája, a legrégebbitől kezdve, így az új preset a végére
-kerül, és a DAW által eltárolt számok jelentése nem változik. Mindig 128 hely van, az üresek neve "-". A DAW-ban egy program
-kiválasztása betölti a rack presetet, ahogy a név menü is. A mappába másolt presetfájl a menü megnyitásakor (vagy amikor a DAW újra
-lekérdezi) megjelenik.
 
 A fokozatok sorrendje fix: előbb az mnKord, aztán az mnArpee.
 
@@ -140,8 +118,8 @@ Ellenőrizd a két kapcsolót, és hogy az mnKordban van-e kiosztás a billenty�
 **Lenyomott billentyű mellett kikapcsoltam egy fokozatot, és most a billentyű néma.** A lenyomott billentyűt felengedte a fokozattal
 együtt. Nyomd meg újra.
 
-**Kiváltja az mnKordot és az mnArpee-t?** Nem: azok változatlanul megmaradnak, az mnKarp ugyanazt a kódot használja. Ha csak
-akkordkiosztót vagy csak arpeggiátort szeretnél, használd őket külön.
+**Kiváltja az mnKordot és az mnArpee-t?** Nem: az mnKarp őket tölti be, ezért telepítve kell lenniük. Ha csak akkordkiosztót vagy
+csak arpeggiátort szeretnél, használd őket külön.
 
 ## Licenc
 

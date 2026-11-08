@@ -44,14 +44,12 @@ MnKarpAudioProcessor::MnKarpAudioProcessor()
         addParameter(mirror);
     }
 
-    refreshProgramList();
     startTimerHz(10);
 }
 
 MnKarpAudioProcessor::~MnKarpAudioProcessor()
 {
     stopTimer();
-    cancelPendingUpdate();
 
     // The mirrors outlive the members below (the processor base class owns them): let go of mnArpee first.
     for (auto* mirror : mirrors)
@@ -225,263 +223,44 @@ void restoreChild(const juce::XmlElement& root, const char* name, juce::AudioPro
             child->setStateInformation(block.getData(), (int) block.getSize());
     }
 }
-
-juce::File presetFolderOverride;
-}
-
-std::unique_ptr<juce::XmlElement> MnKarpAudioProcessor::createStateXml(bool forPreset)
-{
-    auto root = std::make_unique<juce::XmlElement>(forPreset ? "mnKarpPreset" : "mnKarpState");
-    root->setAttribute("version", 1);
-    for (const auto stage : { kordStage, arpeeStage })
-    {
-        root->setAttribute(stageParamId(stage), isStageOn(stage));
-        if (! forPreset)
-            root->setAttribute(juce::String(stageParamId(stage)) + "Folded", isStageFolded(stage));
-    }
-
-    if (! forPreset)
-    {
-        root->setAttribute("zoom", (double) getZoom());
-        root->setAttribute("width", getWidth());
-        root->setAttribute("preset", presetName);
-    }
-
-    // The plugins' own state, as they give it to a host. (mnKarp 1.0 kept the state of its built-in copies
-    // under other names: a project or preset of 1.0 keeps its switches and size, the plugins start as they are.)
-    storeChild(*root, "KordPlugin", getStageProcessor(kordStage));
-    storeChild(*root, "ArpeePlugin", getStageProcessor(arpeeStage));
-    return root;
-}
-
-void MnKarpAudioProcessor::applyStateXml(const juce::XmlElement& root, bool fromPreset)
-{
-    for (const auto stage : { kordStage, arpeeStage })
-    {
-        if (auto* parameter = apvts.getParameter(stageParamId(stage)))
-            parameter->setValueNotifyingHost(root.getBoolAttribute(stageParamId(stage), true) ? 1.0f : 0.0f);
-        if (! fromPreset)
-            setStageFolded(stage, root.getBoolAttribute(juce::String(stageParamId(stage)) + "Folded", false));
-    }
-
-    restoreChild(root, "KordPlugin", getStageProcessor(kordStage));
-    restoreChild(root, "ArpeePlugin", getStageProcessor(arpeeStage));
-
-    if (! fromPreset)
-    {
-        setZoom((float) root.getDoubleAttribute("zoom", defaultZoom));
-        setWidth(root.getIntAttribute("width", 0));
-        presetName = root.getStringAttribute("preset");
-        // The project may hold edits made after the preset was saved: compare with the file as it is.
-        savedSnapshot = {};
-        if (presetName.isNotEmpty())
-            if (const auto saved = juce::XmlDocument::parse(presetFile(presetName)))
-                savedSnapshot = saved->toString();
-    }
 }
 
 void MnKarpAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
-    copyXmlToBinary(*createStateXml(false), destData);
+    juce::XmlElement root("mnKarpState");
+    root.setAttribute("version", 2);
+    for (const auto stage : { kordStage, arpeeStage })
+    {
+        root.setAttribute(stageParamId(stage), isStageOn(stage));
+        root.setAttribute(juce::String(stageParamId(stage)) + "Folded", isStageFolded(stage));
+    }
+    root.setAttribute("zoom", (double) getZoom());
+    root.setAttribute("width", getWidth());
+
+    // The plugins' own state, as they give it to a host. (mnKarp 1.0 kept the state of its built-in copies
+    // under other names: a project of 1.0 keeps its switches and size, the plugins start as they are.)
+    storeChild(root, "KordPlugin", getStageProcessor(kordStage));
+    storeChild(root, "ArpeePlugin", getStageProcessor(arpeeStage));
+    copyXmlToBinary(root, destData);
 }
 
 void MnKarpAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
     const auto root = getXmlFromBinary(data, sizeInBytes);
-    if (root != nullptr && root->hasTagName("mnKarpState"))
-        applyStateXml(*root, false);
-}
-
-//==============================================================================
-juce::File MnKarpAudioProcessor::getPresetFolder()
-{
-    if (presetFolderOverride != juce::File())
-        return presetFolderOverride;
-    return juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-        .getChildFile("MNAudio").getChildFile("mnKarp").getChildFile("Presets");
-}
-
-void MnKarpAudioProcessor::overridePresetFolder(const juce::File& folder)
-{
-    presetFolderOverride = folder;
-}
-
-juce::File MnKarpAudioProcessor::presetFile(const juce::String& name)
-{
-    return getPresetFolder().getChildFile(juce::File::createLegalFileName(name) + ".mnkarp");
-}
-
-juce::StringArray MnKarpAudioProcessor::listPresetsByAge()
-{
-    auto files = getPresetFolder().findChildFiles(juce::File::findFiles, false, "*.mnkarp");
-    std::sort(files.begin(), files.end(), [](const juce::File& a, const juce::File& b)
-              {
-                  const auto timeA = a.getCreationTime(), timeB = b.getCreationTime();
-                  return timeA != timeB ? timeA < timeB : a.getFileName().compareNatural(b.getFileName()) < 0;
-              });
-
-    juce::StringArray names;
-    for (const auto& file : files)
-        names.add(file.getFileNameWithoutExtension());
-    return names;
-}
-
-juce::StringArray MnKarpAudioProcessor::listPresets()
-{
-    juce::StringArray names;
-    for (const auto& file : getPresetFolder().findChildFiles(juce::File::findFiles, false, "*.mnkarp"))
-        names.add(file.getFileNameWithoutExtension());
-    names.sortNatural();
-    return names;
-}
-
-bool MnKarpAudioProcessor::savePreset(const juce::String& name)
-{
-    if (juce::File::createLegalFileName(name).isEmpty())
-        return false;
-
-    const auto file = presetFile(name);
-    if (! file.getParentDirectory().createDirectory().wasOk())
-        return false;
-
-    if (! createPresetXml()->writeTo(file))
-        return false;
-
-    presetName = file.getFileNameWithoutExtension();
-    savedSnapshot = presetSnapshot();
-    refreshProgramList();
-    return true;
-}
-
-bool MnKarpAudioProcessor::loadPreset(const juce::String& name)
-{
-    const auto file = presetFile(name);
-    const auto root = juce::XmlDocument::parse(file);
-    if (root == nullptr || ! root->hasTagName("mnKarpPreset"))
-        return false;
-
-    applyStateXml(*root, true);
-    presetName = file.getFileNameWithoutExtension();
-    savedSnapshot = presetSnapshot();
-    return true;
-}
-
-juce::String MnKarpAudioProcessor::presetSnapshot()
-{
-    return createPresetXml()->toString();
-}
-
-std::unique_ptr<juce::XmlElement> MnKarpAudioProcessor::createPresetXml()
-{
-    return createStateXml(true);
-}
-
-bool MnKarpAudioProcessor::isPresetDirty()
-{
-    return presetName.isNotEmpty() && presetSnapshot() != savedSnapshot;
-}
-
-bool MnKarpAudioProcessor::deletePreset(const juce::String& name)
-{
-    const auto file = presetFile(name);
-    if (! file.existsAsFile() || ! file.moveToTrash())
-        return false;
-
-    if (presetName == file.getFileNameWithoutExtension())
-        presetName = {};
-    refreshProgramList();
-    return true;
-}
-
-//==============================================================================
-void MnKarpAudioProcessor::refreshProgramList()
-{
-    auto names = listPresetsByAge();
-    {
-        const juce::ScopedLock lock(programLock);
-        if (names == programNames)
-            return;
-        programNames = std::move(names);
-    }
-    notifyHostProgramsChanged();
-}
-
-void MnKarpAudioProcessor::notifyHostProgramsChanged()
-{
-    // The host's component handler belongs to the message thread.
-    if (! juce::MessageManager::existsAndIsCurrentThread())
-    {
-        hostNotificationPending.store(true);
-        triggerAsyncUpdate();
+    if (root == nullptr || ! root->hasTagName("mnKarpState"))
         return;
-    }
 
-    hostNotificationPending.store(false);
-    updateHostDisplay(ChangeDetails().withProgramChanged(true));
-}
-
-int MnKarpAudioProcessor::getCurrentProgram()
-{
-    const int pending = pendingProgram.load();
-    if (pending >= 0)
-        return pending;
-
-    const juce::ScopedLock lock(programLock);
-    return juce::jmax(0, programNames.indexOf(presetName));
-}
-
-void MnKarpAudioProcessor::setCurrentProgram(int index)
-{
-    juce::String name;
+    for (const auto stage : { kordStage, arpeeStage })
     {
-        const juce::ScopedLock lock(programLock);
-        if (index >= 0 && index < programNames.size())
-            name = programNames[index];
+        if (auto* parameter = apvts.getParameter(stageParamId(stage)))
+            parameter->setValueNotifyingHost(root->getBoolAttribute(stageParamId(stage), true) ? 1.0f : 0.0f);
+        setStageFolded(stage, root->getBoolAttribute(juce::String(stageParamId(stage)) + "Folded", false));
     }
 
-    // An empty slot: stay on the current preset, and point the host back at it.
-    if (name.isEmpty())
-    {
-        notifyHostProgramsChanged();
-        return;
-    }
-
-    if (juce::MessageManager::existsAndIsCurrentThread())
-    {
-        pendingProgram.store(-1);
-        cancelPendingUpdate();
-        loadPreset(name);
-        return;
-    }
-
-    // Loading reads files and sets the two plugins; the audio thread must not wait for that.
-    pendingProgram.store(index);
-    triggerAsyncUpdate();
-}
-
-const juce::String MnKarpAudioProcessor::getProgramName(int index)
-{
-    const juce::ScopedLock lock(programLock);
-    return index >= 0 && index < programNames.size() ? programNames[index] : juce::String("-");
-}
-
-void MnKarpAudioProcessor::handleAsyncUpdate()
-{
-    const int index = pendingProgram.exchange(-1);
-    if (index >= 0)
-    {
-        juce::String name;
-        {
-            const juce::ScopedLock lock(programLock);
-            if (index < programNames.size())
-                name = programNames[index];
-        }
-        if (name.isNotEmpty())
-            loadPreset(name);
-    }
-
-    if (hostNotificationPending.load())
-        notifyHostProgramsChanged();
+    restoreChild(*root, "KordPlugin", getStageProcessor(kordStage));
+    restoreChild(*root, "ArpeePlugin", getStageProcessor(arpeeStage));
+    setZoom((float) root->getDoubleAttribute("zoom", defaultZoom));
+    setWidth(root->getIntAttribute("width", 0));
 }
 
 //==============================================================================
